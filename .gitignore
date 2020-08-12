@@ -1,0 +1,4 @@
+/out
+/.idea
+/resources/thumbnails/*
+!/resources/thumbnails/empty

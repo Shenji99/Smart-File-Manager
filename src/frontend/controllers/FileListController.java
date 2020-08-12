@@ -1,0 +1,145 @@
+package frontend.controllers;
+
+import backend.DataFile;
+import backend.FileManager;
+import backend.FileObserver;
+import javafx.event.Event;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
+import javafx.scene.layout.HBox;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class FileListController implements FileObserver {
+
+    private ListView fileList;
+    private FileManager fileManager;
+
+    private MainScreenController mainScreenController;
+
+    public FileListController(MainScreenController mainScreenController) {
+        this.mainScreenController = mainScreenController;
+
+        this.fileList = this.mainScreenController.getFileList();
+        this.fileManager = this.mainScreenController.getFileManager();
+
+        fileList.setOnDragOver(event -> {
+            event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+            event.consume();
+        });
+
+
+        fileList.setOnDragDropped(event -> {
+            Dragboard db = event.getDragboard();
+            boolean success = false;
+            if (db.hasFiles()) {
+                List<File> files = db.getFiles();
+                for(File f: files) {
+                    try {
+                        fileManager.addChild(f);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                this.mainScreenController.loadThumbnailsInThread();
+                updateView(fileManager.getAllFiles());
+                success = true;
+            }
+            /* let the source know whether the string was successfully
+             * transferred and used */
+            event.setDropCompleted(success);
+            event.consume();
+        });
+    }
+
+    @Override
+    public void notify(DataFile dataFile) {
+
+    }
+
+    public void updateView(List<DataFile> files){
+        fileList.getItems().clear();
+        for(int i = 0; i < files.size(); i++) {
+            DataFile df = files.get(i);
+            if(!df.getType().isEmpty()){
+                fileList.getItems().add(createListItem(df));
+            }
+        }
+    }
+
+    public void updateView(String path) {
+        fileList.getItems().clear();
+        try {
+            ArrayList<DataFile> files = fileManager.getFiles(path);
+
+            for (DataFile df : files) {
+                if (!df.getType().isEmpty()) {
+                    fileList.getItems().add(createListItem(df));
+                }
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public HBox createListItem(DataFile df) {
+        HBox nameWrapper = new HBox();
+        Label name = new Label(df.getName());
+        nameWrapper.setMinWidth(100);
+        nameWrapper.getChildren().add(name);
+
+        HBox typeWrapper = new HBox();
+        Label type = new Label(df.getType());
+        typeWrapper.setMinWidth(100);
+        typeWrapper.getChildren().add(type);
+
+        HBox sizeWrapper = new HBox();
+        Label size = new Label(Long.toString(df.getSize()));
+        sizeWrapper.setMinWidth(100);
+        sizeWrapper.getChildren().add(size);
+
+        HBox dateWrapper = new HBox();
+        Label date = new Label(df.getChangeDate().toString());
+        dateWrapper.setMinWidth(100);
+        dateWrapper.getChildren().add(date);
+
+        HBox pathWrapper = new HBox();
+        Label lpath = new Label(df.getPath());
+        pathWrapper.setMinWidth(100);
+        pathWrapper.getChildren().add(lpath);
+
+
+//            addStyleClass("list-item", nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
+//
+//            if(i % 2 == 0){
+//                addStyleClass("light-grey-bg", nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
+//            }else {
+//                addStyleClass("dark-background", nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
+//            }
+
+        HBox a = new HBox();
+        a.setSpacing(10);
+        a.getChildren().addAll(nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
+        return a;
+    }
+
+    public void listViewItemClicked(Event event) {
+        try {
+            HBox a = (HBox) fileList.getSelectionModel().getSelectedItem();
+            Label selectedFilePath = (Label) ((HBox)(a.getChildren().get(4))).getChildren().get(0);
+            DataFile f = FileManager.getInstance().findFileByPath(selectedFilePath.getText());
+
+            this.mainScreenController.updateFileProperties(event, f);
+        }catch (Exception e){
+            //can be ignored
+//            e.printStackTrace();
+        }
+    }
+
+
+}

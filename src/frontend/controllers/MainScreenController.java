@@ -55,7 +55,6 @@ public class MainScreenController implements Initializable {
 
     }
 
-
     protected void showFileInExplorer(String path) {
         try {
             Runtime.getRuntime().exec("explorer.exe /select," + path);
@@ -71,11 +70,7 @@ public class MainScreenController implements Initializable {
                 for(DataFile df: files){
                     try {
                         filePropertyController.updateThumbnail(df, false);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (URISyntaxException e) {
+                    } catch (IOException | InterruptedException | URISyntaxException e) {
                         e.printStackTrace();
                     }
                 }

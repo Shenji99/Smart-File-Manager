@@ -24,25 +24,24 @@ import javafx.scene.media.MediaView;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.text.DecimalFormat;
 import java.util.Iterator;
 
 public class FilePropertyController implements FileObserver {
 
-    private MainScreenController mainScreenController;
+    private final MainScreenController mainScreenController;
 
     private StackPane nameStackPane;
     private Label nameLabel;
     private Label pathLabel;
 
-    private ImageView thumbnail;
-    private ImageView playIcon;
-    private MediaView mediaView;
+    private final ImageView thumbnail;
+    private final ImageView playIcon;
+    private final MediaView mediaView;
 
-    private HBox controlsWrapper;
-    private Slider videoSlider;
-    private Button playButton;
-    private Slider volumeSlider;
+    private final HBox controlsWrapper;
+    private final Slider videoSlider;
+    private final Button playButton;
+    private final Slider volumeSlider;
 
     private InvalidationListener videoSliderListener;
     private InvalidationListener volumeSliderListener;
@@ -60,9 +59,12 @@ public class FilePropertyController implements FileObserver {
         this.volumeSlider = mainScreenController.getVideoVolumeSlider();
         this.controlsWrapper = mainScreenController.getControlsWrapper();
 
+        this.controlsWrapper.setMaxWidth(this.mediaView.getFitWidth());
+        this.controlsWrapper.setMaxHeight(this.mediaView.getFitHeight());
+
+        this.playButton.setText("||");
         this.videoSlider.setValue(0);
         this.volumeSlider.setValue(30);
-        this.playButton.setText(">");
         hideMediaPlayerVideo();
 
         this.playIcon.setVisible(false);
@@ -91,56 +93,55 @@ public class FilePropertyController implements FileObserver {
             this.volumeSlider.valueProperty().removeListener(volumeSliderListener);
         }
 
-        if(player != null) {
-            player.setVolume(this.volumeSlider.getValue()/100);
+        player.setVolume(this.volumeSlider.getValue()/100);
 
-            this.playButton.setOnAction(event -> {
-                MediaPlayer.Status status = player.getStatus();
-                if (status == MediaPlayer.Status.PLAYING) {
-                    if (player.getCurrentTime().greaterThanOrEqualTo(player.getTotalDuration())) {
-                        player.seek(player.getStartTime());
-                        player.play();
-                        playIcon.setVisible(false);
-                    }
-                    player.pause();
-                    playIcon.setVisible(true);
-                    playButton.setText(">");
-                } else {
-                    player.pause();
-                    playIcon.setVisible(true);
-                    playButton.setText(">");
-                }
-
-                if (status == MediaPlayer.Status.HALTED || status == MediaPlayer.Status.STOPPED || status == MediaPlayer.Status.PAUSED) {
+        this.playButton.setOnAction(event -> {
+            MediaPlayer.Status status = player.getStatus();
+            if (status == MediaPlayer.Status.PLAYING) {
+                if (player.getCurrentTime().greaterThanOrEqualTo(player.getTotalDuration())) {
+                    player.seek(player.getStartTime());
                     player.play();
+                    this.playButton.setText("||");
                     playIcon.setVisible(false);
-                    playButton.setText("||");
                 }
-            });
+                player.pause();
+                playIcon.setVisible(true);
+                playButton.setText(">");
+            } else {
+                player.pause();
+                playIcon.setVisible(true);
+                playButton.setText(">");
+            }
+
+            if (status == MediaPlayer.Status.HALTED || status == MediaPlayer.Status.STOPPED || status == MediaPlayer.Status.PAUSED) {
+                player.play();
+                playIcon.setVisible(false);
+                playButton.setText("||");
+            }
+        });
 
 
-            this.playButtonListener = observable -> {
-                    if (player.getCurrentTime().greaterThanOrEqualTo(player.getTotalDuration())) {
-                        player.pause();
-                    }
-                    FilePropertyController.this.updateSliderValues(player);
-            };
-            player.currentTimeProperty().addListener(this.playButtonListener);
-
-            this.videoSliderListener = observable -> {
-                if (videoSlider.isPressed()) {
-                    player.seek(player.getMedia().getDuration().multiply(videoSlider.getValue() / 100));
+        this.playButtonListener = observable -> {
+                if (player.getCurrentTime().greaterThanOrEqualTo(player.getTotalDuration())) {
+                    player.pause();
                 }
-            };
-            videoSlider.valueProperty().addListener(this.videoSliderListener);
+                FilePropertyController.this.updateSliderValues(player);
+        };
+        player.currentTimeProperty().addListener(this.playButtonListener);
 
-            this.volumeSliderListener = observable -> {
-                if(volumeSlider.isPressed()){
-                    player.setVolume(volumeSlider.getValue()/100);
-                }
-            };
-            this.volumeSlider.valueProperty().addListener(this.volumeSliderListener);
-        }
+        this.videoSliderListener = observable -> {
+            if (videoSlider.isPressed()) {
+                player.seek(player.getMedia().getDuration().multiply(videoSlider.getValue() / 100));
+            }
+        };
+        videoSlider.valueProperty().addListener(this.videoSliderListener);
+
+        this.volumeSliderListener = observable -> {
+            if(volumeSlider.isPressed()){
+                player.setVolume(volumeSlider.getValue()/100);
+            }
+        };
+        this.volumeSlider.valueProperty().addListener(this.volumeSliderListener);
 
     }
 
@@ -158,10 +159,9 @@ public class FilePropertyController implements FileObserver {
     }
 
     void updateThumbnail(DataFile f, boolean set) throws IOException, InterruptedException, URISyntaxException {
-
-        hideMediaPlayerVideo();
-
-
+        if(set){
+            hideMediaPlayerVideo();
+        }
         String newName = f.getPath().replace("\\", "+");
         newName = newName.replace("/", "+");
         newName = newName.replace(":", "+");
@@ -181,8 +181,8 @@ public class FilePropertyController implements FileObserver {
                 case "mp4": img = createVideoThumbnail(f, outpath); break;
                 case "jpg":
                 case "png":
-                case "gif":
                 case "webp": img = createImageThumbnail(f, outpath); break;
+                case "gif": img = createImageGifThumbnail(f); break;
             }
             if(set){
                 this.thumbnail.setImage(img);
@@ -192,6 +192,10 @@ public class FilePropertyController implements FileObserver {
                 this.thumbnail.setImage(new Image(image.toURI().toString()));
             }
         }
+    }
+
+    private Image createImageGifThumbnail(DataFile f) {
+        return new Image(new File(f.getPath()).toURI().toString());
     }
 
     private void hideMediaPlayerVideo() {
@@ -315,16 +319,7 @@ public class FilePropertyController implements FileObserver {
 
         //SIZE
         Label sizeLabel =  (Label) scene.lookup("#sizeLabelValue");
-        if(f.getSize() >= 1000000000){
-            float res = f.getSize()/1000000000f;
-            DecimalFormat df = new DecimalFormat();
-            df.setMaximumFractionDigits(2);
-            sizeLabel.setText(df.format(res)+" GB");
-        }else if(f.getSize() >= 1000000){
-            sizeLabel.setText(f.getSize()/1000000+" MB");
-        }else if(f.getSize() >= 1000){
-            sizeLabel.setText(f.getSize()/1000+" KB");
-        }
+        sizeLabel.setText(f.getFormattedSize());
         sizeLabel.setOnContextMenuRequested(contextMenuEvent -> {
             ContextMenu cm = new ContextMenu();
             MenuItem copy = new MenuItem("copy");
@@ -415,6 +410,7 @@ public class FilePropertyController implements FileObserver {
         mediaPlayer = new MediaPlayer(media);
         this.mediaView.setMediaPlayer(mediaPlayer);
         mediaPlayer.play();
+        this.playButton.setText("||");
         this.playIcon.setVisible(false);
         setMediaControlVisibility(true);
 
@@ -422,15 +418,18 @@ public class FilePropertyController implements FileObserver {
 
         playIcon.setOnMouseClicked(mouseEvent1 -> {
             mediaPlayer.play();
+            this.playButton.setText("||");
             playIcon.setVisible(false);
         });
 
         mediaView.setOnMouseClicked(mouseEvent1 -> {
             if(mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
                 mediaPlayer.pause();
+                this.playButton.setText(">");
                 playIcon.setVisible(true);
             }else{
                 mediaPlayer.play();
+                this.playButton.setText("||");
                 playIcon.setVisible(false);
             }
         });

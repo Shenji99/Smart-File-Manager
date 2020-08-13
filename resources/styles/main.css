@@ -5,6 +5,8 @@
 	-fx-medium-grey: #373a42;
 	-fx-ligther-grey: #5c6070;
 
+	-fx-primary-blue: #0c0845;
+
 	-fx-primary-purple: #ab467f;
 	-fx-lighter-purple: #d1569b;
 	-fx-dark-purple: #4b4146;
@@ -38,7 +40,7 @@
 
 .list-cell:filled:selected:focused, .list-cell:filled:selected {
 	-fx-text-fill: white;
-    -fx-background-color: linear-gradient(-fx-primary-purple 50%, -fx-dark-purple 100%);
+    -fx-background-color: linear-gradient(#b10063 20%,-fx-primary-purple 100%);
 }
 
 .list-cell:odd {
@@ -88,5 +90,8 @@
 	-fx-text-fill: white;
 	-fx-font-weight: 9;
 	-fx-text-alignment: center;
+}
 
+#mediaView {
+	-fx-background-color: -fx-dark-grey;
 }

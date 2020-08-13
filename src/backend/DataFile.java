@@ -3,7 +3,6 @@ package backend;
 import backend.exceptions.InvalidFileNameException;
 import backend.exceptions.UnexpectedErrorException;
 
-import javax.xml.crypto.Data;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
@@ -35,15 +35,18 @@ public class DataFile {
         BasicFileAttributes attr = Files.readAttributes(fp, BasicFileAttributes.class);
 
         String extension = "", name = "";
-        int li = file.getName().lastIndexOf('.');
-        if (li > 0) {
-            extension = file.getName().substring(li+1);
-            name = file.getName().substring(0,li);
+        //if it is a folder it should not have an extension
+        if(file.listFiles() == null) {
+            int li = file.getName().lastIndexOf('.');
+            if (li > 0) {
+                extension = file.getName().substring(li+1);
+                name = file.getName().substring(0,li);
+            }
         }
+        this.type = extension;
         this.name = name;
         this.size = file.length();
         this.changeDate = attr.lastModifiedTime();
-        this.type = extension;
         this.path = file.getAbsolutePath();
 
         try {
@@ -73,21 +76,11 @@ public class DataFile {
         File[] dir = new File(this.path).listFiles();
         if(dir != null){
             for(File f: dir) {
-                Path fp = Paths.get(f.getAbsolutePath());
-                BasicFileAttributes attr = Files.readAttributes(fp, BasicFileAttributes.class);
-
-                String extension = "", name = "";
-                int li = f.getName().lastIndexOf('.');
-                if (li > 0) {
-                    extension = f.getName().substring(li+1);
-                    name = f.getName().substring(0,li);
-                }
-                DataFile df = new DataFile(name, f.length(), attr.lastModifiedTime(), extension, f.getAbsolutePath());
+                DataFile df = new DataFile(f);
                 files.add(df);
             }
         }
     }
-
 
     public DataFile get(String path) {
         if(this.path.equals(path)) {
@@ -170,6 +163,19 @@ public class DataFile {
 
     }
 
+    public String getFormattedSize() {
+        if(this.size >= 1000000000){
+            float res = this.size/1000000000f;
+            DecimalFormat df = new DecimalFormat();
+            df.setMaximumFractionDigits(2);
+            return df.format(res)+" GB";
+        }else if(this.size >= 1000000) {
+            return this.size/1000000+" MB";
+        }else if(this.size >= 1000) {
+            return this.size/1000+" KB";
+        }
+        return null;
+    }
 
 
     //GETTER SETTER
@@ -229,5 +235,6 @@ public class DataFile {
     public void setFiles(ArrayList<DataFile> files) {
         this.files = files;
     }
+
 
 }

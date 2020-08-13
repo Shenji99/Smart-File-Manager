@@ -22,10 +22,6 @@ public class FileManager {
     }
 
     public ArrayList<DataFile> getFiles(String path) {
-        for(DataFile file: this.files) {
-            System.out.print(file.getPath() + ", ");
-        }
-        System.out.println();
         try {
             path = path.replace("[", "");
             path = path.replace("]", "");
@@ -82,6 +78,15 @@ public class FileManager {
         DataFile foundFile = findFileByPath(file.getAbsolutePath());
         if(foundFile == null){
             this.files.add(new DataFile(file));
+        }else {
+            File[] subFiles = file.listFiles();
+            if(subFiles != null){
+                for(File f: subFiles) {
+                    if(findFileByPath(f.getAbsolutePath()) == null) {
+                        this.files.add(new DataFile(f));
+                    }
+                }
+            }
         }
     }
 }

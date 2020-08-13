@@ -18,10 +18,10 @@ import java.util.List;
 
 public class FileListController implements FileObserver {
 
-    private ListView fileList;
-    private FileManager fileManager;
+    private final ListView fileList;
+    private final FileManager fileManager;
 
-    private MainScreenController mainScreenController;
+    private final MainScreenController mainScreenController;
 
     public FileListController(MainScreenController mainScreenController) {
         this.mainScreenController = mainScreenController;
@@ -91,7 +91,7 @@ public class FileListController implements FileObserver {
         typeWrapper.getChildren().add(type);
 
         HBox sizeWrapper = new HBox();
-        Label size = new Label(Long.toString(df.getSize()));
+        Label size = new Label(df.getFormattedSize());
         sizeWrapper.setMinWidth(100);
         sizeWrapper.getChildren().add(size);
 

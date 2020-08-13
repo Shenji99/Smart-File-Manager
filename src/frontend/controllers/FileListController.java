@@ -8,6 +8,8 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 
@@ -122,11 +124,17 @@ public class FileListController implements FileObserver {
             HBox a = (HBox) fileList.getSelectionModel().getSelectedItem();
             Label selectedFilePath = (Label) ((HBox)(a.getChildren().get(4))).getChildren().get(0);
             DataFile f = FileManager.getInstance().findFileByPath(selectedFilePath.getText());
-
             this.mainScreenController.updateFileProperties(event, f);
+
+            if(event instanceof KeyEvent) {
+                KeyEvent e = (KeyEvent) event;
+                if(e.getCode() == KeyCode.DELETE){
+                    fileManager.deleteFile(f.getPath());
+                    updateView(fileManager.getAllFiles());
+                }
+            }
         }catch (Exception e){
             //can be ignored
-//            e.printStackTrace();
         }
     }
 

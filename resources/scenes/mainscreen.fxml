@@ -19,13 +19,13 @@
 <?import javafx.scene.media.MediaView?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="652.0" prefWidth="941.0" styleClass="dark-background" stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="frontend.controllers.MainScreenController">
+<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="652.0" prefWidth="941.0" styleClass="dark-background" stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="frontend.controllers.MainScreenController">
    <children>
       <SplitPane fx:id="content" dividerPositions="0.6327231121281465" prefHeight="652.0" prefWidth="941.0" styleClass="primary-grey-bg">
          <items>
             <VBox prefHeight="200.0" prefWidth="100.0">
                <children>
-                  <ListView fx:id="fileList" onKeyPressed="#listViewItemClicked" onMouseClicked="#listViewItemClicked" prefHeight="623.0" prefWidth="565.0" styleClass="dark-background" />
+                  <ListView fx:id="fileList" onKeyPressed="#listViewItemClicked" onMouseClicked="#listViewItemClicked" prefHeight="9.9999999E7" prefWidth="549.0" styleClass="dark-background" />
                   <HBox alignment="CENTER_LEFT" prefHeight="50.0" prefWidth="565.0">
                      <children>
                         <CheckBox mnemonicParsing="false" onAction="#orderBySizeClicked" styleClass="file-property-value" text="Sortieren nach Größe" />
@@ -52,10 +52,34 @@
                               <MediaView fx:id="mediaView" fitHeight="200.0" fitWidth="300.0" />
                               <HBox fx:id="controlsWrapper" alignment="CENTER" spacing="10.0" style="-fx-background-color: -fx-medium-grey;">
                                  <children>
-                                    <Button fx:id="pauseVideoButton" maxHeight="20.0" maxWidth="20.0" minHeight="20.0" minWidth="20.0" mnemonicParsing="false" prefHeight="20.0" prefWidth="20.0" styleClass="pause-button">
-                                       <font>
-                                          <Font size="9.0" />
-                                       </font></Button>
+                                    <HBox alignment="CENTER" spacing="6.0">
+                                       <children>
+                                          <Button fx:id="pauseVideoButton" maxHeight="20.0" maxWidth="20.0" minHeight="20.0" minWidth="20.0" mnemonicParsing="false" prefHeight="20.0" prefWidth="20.0" styleClass="pause-button">
+                                             <font>
+                                                <Font size="9.0" />
+                                             </font>
+                                          </Button>
+                                          <HBox alignment="CENTER">
+                                             <children>
+                                                <Label fx:id="currentTime" minWidth="25" prefHeight="17.0" prefWidth="25" maxWidth="25" text="00:00" textFill="WHITE">
+                                                   <font>
+                                                      <Font size="9.0" />
+                                                   </font>
+                                                </Label>
+                                                <Label text="/" maxWidth="4" prefWidth="4" minWidth="4" textFill="WHITE">
+                                                   <font>
+                                                      <Font size="9.0" />
+                                                   </font>
+                                                </Label>
+                                                <Label fx:id="videoDuration" minWidth="25.0" prefHeight="17.0" prefWidth="25.0" maxWidth="25" text="00:00" textFill="WHITE">
+                                                   <font>
+                                                      <Font size="9.0" />
+                                                   </font>
+                                                </Label>
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </HBox>
                                     <Slider fx:id="videoSlider" blockIncrement="0.5" prefHeight="14.0" prefWidth="219.0" />
                                     <Slider fx:id="volumeSlider" blockIncrement="1.0" prefHeight="14.0" prefWidth="68.0" styleClass="slider" />
                                  </children>

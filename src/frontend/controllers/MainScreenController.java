@@ -6,7 +6,6 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
@@ -33,6 +32,9 @@ public class MainScreenController implements Initializable {
     @FXML private Slider videoSlider;
     @FXML private Button pauseVideoButton;
     @FXML private Slider volumeSlider;
+
+    @FXML private Label currentTime;
+    @FXML private Label videoDuration;
 
     private FileManager fileManager;
 
@@ -122,9 +124,6 @@ public class MainScreenController implements Initializable {
         this.filePropertyController.updateFileProperties(event, file);
     }
 
-
-
-
     public ListView getFileList() {
         return fileList;
     }
@@ -203,5 +202,13 @@ public class MainScreenController implements Initializable {
 
     public HBox getControlsWrapper() {
         return controlsWrapper;
+    }
+
+    public Label getCurrentTimeLabel() {
+        return currentTime;
+    }
+
+    public Label getVideoDuratioNLabel() {
+        return videoDuration;
     }
 }

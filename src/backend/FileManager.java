@@ -77,16 +77,31 @@ public class FileManager {
     public void addChild(File file) throws IOException {
         DataFile foundFile = findFileByPath(file.getAbsolutePath());
         if(foundFile == null){
-            this.files.add(new DataFile(file));
+            this.files.add(new DataFile(null, file));
         }else {
             File[] subFiles = file.listFiles();
             if(subFiles != null){
                 for(File f: subFiles) {
                     if(findFileByPath(f.getAbsolutePath()) == null) {
-                        this.files.add(new DataFile(f));
+                        this.files.add(new DataFile(null, f));
                     }
                 }
             }
         }
+    }
+
+    public void deleteFile(File f){
+        if(f != null){
+            DataFile file = findFileByPath(f.getAbsolutePath());
+            if(file.getParent() == null){
+                this.files.remove(file);
+            }else {
+                file.getParent().deleteChild(file);
+            }
+        }
+    }
+
+    public void deleteFile(String path){
+        deleteFile(new File(path));
     }
 }

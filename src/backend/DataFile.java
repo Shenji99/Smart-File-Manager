@@ -24,13 +24,16 @@ public class DataFile {
     private ArrayList<String> tags;
     private ArrayList<DataFile> files;
 
+    private DataFile parent;
+
     public DataFile() {
         this.files = new ArrayList<>();
         this.tags = new ArrayList<>();
     }
 
-    public DataFile(File file) throws IOException {
+    public DataFile(DataFile parent, File file) throws IOException {
         this();
+        this.parent = parent;
         Path fp = Paths.get(file.getAbsolutePath());
         BasicFileAttributes attr = Files.readAttributes(fp, BasicFileAttributes.class);
 
@@ -57,8 +60,9 @@ public class DataFile {
 
     }
 
-    public DataFile(String name, long size, FileTime changeDate, String type, String path) {
+    public DataFile(DataFile parent, String name, long size, FileTime changeDate, String type, String path) {
         this();
+        this.parent = parent;
         this.name = name;
         this.size = size;
         this.changeDate = changeDate;
@@ -76,7 +80,7 @@ public class DataFile {
         File[] dir = new File(this.path).listFiles();
         if(dir != null){
             for(File f: dir) {
-                DataFile df = new DataFile(f);
+                DataFile df = new DataFile(this, f);
                 files.add(df);
             }
         }
@@ -178,6 +182,10 @@ public class DataFile {
     }
 
 
+    public void deleteChild(DataFile file) {
+        this.files.remove(file);
+    }
+
     //GETTER SETTER
 
     public String getName() {
@@ -236,5 +244,12 @@ public class DataFile {
         this.files = files;
     }
 
+    public DataFile getParent() {
+        return parent;
+    }
+
+    public void setParent(DataFile parent) {
+        this.parent = parent;
+    }
 
 }

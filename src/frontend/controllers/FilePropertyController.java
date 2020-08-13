@@ -44,6 +44,8 @@ public class FilePropertyController implements FileObserver {
     private final Slider videoSlider;
     private final Button playButton;
     private final Slider volumeSlider;
+    private Label currentTime;
+    private Label videoDuration;
 
     private InvalidationListener videoSliderListener;
     private InvalidationListener volumeSliderListener;
@@ -60,6 +62,8 @@ public class FilePropertyController implements FileObserver {
         this.playButton = mainScreenController.getVideoPauseButton();
         this.volumeSlider = mainScreenController.getVideoVolumeSlider();
         this.controlsWrapper = mainScreenController.getControlsWrapper();
+        this.currentTime = mainScreenController.getCurrentTimeLabel();
+        this.videoDuration = mainScreenController.getVideoDuratioNLabel();
 
         this.controlsWrapper.setMaxWidth(this.mediaView.getFitWidth());
         this.controlsWrapper.setMaxHeight(this.mediaView.getFitHeight());
@@ -124,10 +128,10 @@ public class FilePropertyController implements FileObserver {
 
 
         this.playButtonListener = observable -> {
-                if (player.getCurrentTime().greaterThanOrEqualTo(player.getTotalDuration())) {
-                    player.pause();
-                }
-                FilePropertyController.this.updateSliderValues(player);
+            if (player.getCurrentTime().greaterThanOrEqualTo(player.getTotalDuration())) {
+                player.pause();
+            }
+            FilePropertyController.this.updateSliderValues(player);
         };
         player.currentTimeProperty().addListener(this.playButtonListener);
 
@@ -152,6 +156,22 @@ public class FilePropertyController implements FileObserver {
             if(!volumeSlider.isPressed()){
                 this.videoSlider.setValue(player.getCurrentTime().toMillis() / player.getTotalDuration().toMillis() * 100);
             }
+            int scnds = (int) player.getCurrentTime().toSeconds()%60;
+            int minutes = (int) player.getCurrentTime().toMinutes();
+
+            String minStr, secStr;
+
+            if(minutes < 10){
+                minStr = "0"+minutes;
+            }else {
+                minStr = Integer.toString(minutes);
+            }
+            if(scnds < 10){
+                secStr = "0"+scnds;
+            }else {
+                secStr = Integer.toString(scnds);
+            }
+            this.currentTime.setText(minStr+":"+secStr);
         });
     }
 
@@ -425,6 +445,24 @@ public class FilePropertyController implements FileObserver {
             setMediaControlVisibility(true);
 
             initializeVideoControl();
+
+            mediaPlayer.setOnReady(() -> {
+                int minDuration = (int) this.mediaPlayer.getTotalDuration().toMinutes();
+                int secDuration = (int) (this.mediaPlayer.getTotalDuration().toSeconds()%60);
+                String minDurationStr, secDurationStr;
+
+                if(minDuration < 10){
+                    minDurationStr = "0"+minDuration;
+                }else {
+                    minDurationStr = Integer.toString(minDuration);
+                }
+                if(secDuration < 10){
+                    secDurationStr = "0"+secDuration;
+                }else {
+                    secDurationStr = Integer.toString(secDuration);
+                }
+                this.videoDuration.setText(minDurationStr+":"+secDurationStr);
+            });
 
             playIcon.setOnMouseClicked(mouseEvent1 -> {
                 mediaPlayer.play();

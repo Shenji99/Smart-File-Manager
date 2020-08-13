@@ -38,6 +38,8 @@ public class FilePropertyController implements FileObserver {
     private final ImageView playIcon;
     private final MediaView mediaView;
 
+
+    private MediaPlayer mediaPlayer;
     private final HBox controlsWrapper;
     private final Slider videoSlider;
     private final Button playButton;
@@ -294,7 +296,6 @@ public class FilePropertyController implements FileObserver {
                 textfield.setOnKeyPressed(event1 -> {
                     if(event1.getCode().toString().equals("ENTER")) {
                         String newName = textfield.getText();
-                        System.out.println(newName);
                         if(!newName.equals(f.getName())){
                             try{
                                 f.rename(newName);
@@ -334,6 +335,9 @@ public class FilePropertyController implements FileObserver {
 
         //path
         pathLabel = (Label) scene.lookup("#pathLabelValue");
+        Tooltip tooltip = new Tooltip();
+        tooltip.setText(f.getPath());
+        pathLabel.setTooltip(tooltip);
         pathLabel.setText(f.getPath());
         pathLabel.setOnContextMenuRequested(contextMenuEvent -> {
             ContextMenu cm = new ContextMenu();
@@ -403,36 +407,47 @@ public class FilePropertyController implements FileObserver {
         alert.showAndWait();
     }
 
-    MediaPlayer mediaPlayer;
     public void playVideo(MouseEvent mouseEvent) {
-        File f = new File(pathLabel.getText());
-        Media media = new Media(f.toURI().toString());
-        mediaPlayer = new MediaPlayer(media);
-        this.mediaView.setMediaPlayer(mediaPlayer);
-        mediaPlayer.play();
-        this.playButton.setText("||");
-        this.playIcon.setVisible(false);
-        setMediaControlVisibility(true);
-
-        initializeVideoControl();
-
-        playIcon.setOnMouseClicked(mouseEvent1 -> {
+        try {
+            if(this.mediaPlayer != null) {
+                this.mediaPlayer.dispose();
+            }
+            if(this.videoSlider != null){
+                this.videoSlider.setValue(0);
+            }
+            File f = new File(pathLabel.getText());
+            Media media = new Media(f.toURI().toString());
+            mediaPlayer = new MediaPlayer(media);
+            this.mediaView.setMediaPlayer(mediaPlayer);
             mediaPlayer.play();
             this.playButton.setText("||");
-            playIcon.setVisible(false);
-        });
+            this.playIcon.setVisible(false);
+            setMediaControlVisibility(true);
 
-        mediaView.setOnMouseClicked(mouseEvent1 -> {
-            if(mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
-                mediaPlayer.pause();
-                this.playButton.setText(">");
-                playIcon.setVisible(true);
-            }else{
+            initializeVideoControl();
+
+            playIcon.setOnMouseClicked(mouseEvent1 -> {
                 mediaPlayer.play();
                 this.playButton.setText("||");
                 playIcon.setVisible(false);
-            }
-        });
+            });
+
+            mediaView.setOnMouseClicked(mouseEvent1 -> {
+                if(mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
+                    mediaPlayer.pause();
+                    this.playButton.setText(">");
+                    playIcon.setVisible(true);
+                }else{
+                    mediaPlayer.play();
+                    this.playButton.setText("||");
+                    playIcon.setVisible(false);
+                }
+            });
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
 
     private void setMediaControlVisibility(boolean b) {

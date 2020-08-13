@@ -7,9 +7,7 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ListView;
-import javafx.scene.control.SplitPane;
+import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
@@ -29,11 +27,15 @@ public class MainScreenController implements Initializable {
     @FXML private ImageView thumbnail;
     @FXML private ImageView playIcon;
     @FXML private MediaView mediaView;
+    @FXML private Slider videoSlider;
+    @FXML private Button pauseVideoButton;
+    @FXML private Slider volumeSlider;
 
     private FileManager fileManager;
 
     private FileListController fileListController;
     private FilePropertyController filePropertyController;
+
 
 
     @Override
@@ -192,5 +194,17 @@ public class MainScreenController implements Initializable {
 
     public MediaView getMediaView() {
         return mediaView;
+    }
+
+    public Slider getVideoSlider() {
+        return videoSlider;
+    }
+
+    public Button getVideoPauseButton() {
+        return pauseVideoButton;
+    }
+
+    public Slider getVideoVolumeSlider() {
+        return volumeSlider;
     }
 }

@@ -4,6 +4,8 @@ import backend.DataFile;
 import backend.FileObserver;
 import backend.exceptions.InvalidFileNameException;
 import backend.exceptions.UnexpectedErrorException;
+import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
 import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -36,12 +38,29 @@ public class FilePropertyController implements FileObserver {
     private ImageView playIcon;
     private MediaView mediaView;
 
+    private Slider videoSlider;
+    private Button playButton;
+    private Slider volumeSlider;
+
+    private InvalidationListener videoSliderListener;
+    private InvalidationListener volumeSliderListener;
+    private InvalidationListener playButtonListener;
+
+
     public FilePropertyController(MainScreenController mainScreenController) {
 
         this.mainScreenController = mainScreenController;
         this.thumbnail = mainScreenController.getThumbnail();
         this.playIcon = mainScreenController.getPlayIcon();
         this.mediaView = mainScreenController.getMediaView();
+        this.videoSlider = mainScreenController.getVideoSlider();
+        this.playButton = mainScreenController.getVideoPauseButton();
+        this.volumeSlider = mainScreenController.getVideoVolumeSlider();
+
+        this.videoSlider.setValue(0);
+        this.volumeSlider.setValue(30);
+        this.playButton.setText(">");
+        hideMediaPlayerVideo();
 
         this.playIcon.setVisible(false);
 
@@ -54,6 +73,82 @@ public class FilePropertyController implements FileObserver {
 
     }
 
+    private void initializeVideoControl() {
+        MediaPlayer player = this.mediaView.getMediaPlayer();
+
+        if(this.videoSliderListener != null){
+            this.videoSlider.valueProperty().removeListener(videoSliderListener);
+        }
+
+        if(this.playButtonListener != null){
+            player.currentTimeProperty().removeListener(playButtonListener);
+        }
+
+        if(this.volumeSliderListener != null){
+            this.volumeSlider.valueProperty().removeListener(volumeSliderListener);
+        }
+
+        if(player != null) {
+            player.setVolume(this.volumeSlider.getValue()/100);
+
+            this.playButton.setOnAction(event -> {
+                MediaPlayer.Status status = player.getStatus();
+                if (status == MediaPlayer.Status.PLAYING) {
+                    if (player.getCurrentTime().greaterThanOrEqualTo(player.getTotalDuration())) {
+                        player.seek(player.getStartTime());
+                        player.play();
+                        playIcon.setVisible(false);
+                    }
+                    player.pause();
+                    playIcon.setVisible(true);
+                    playButton.setText(">");
+                } else {
+                    player.pause();
+                    playIcon.setVisible(true);
+                    playButton.setText(">");
+                }
+
+                if (status == MediaPlayer.Status.HALTED || status == MediaPlayer.Status.STOPPED || status == MediaPlayer.Status.PAUSED) {
+                    player.play();
+                    playIcon.setVisible(false);
+                    playButton.setText("||");
+                }
+            });
+
+
+            this.playButtonListener = observable -> {
+                    if (player.getCurrentTime().greaterThanOrEqualTo(player.getTotalDuration())) {
+                        player.pause();
+                    }
+                    FilePropertyController.this.updateSliderValues(player);
+            };
+            player.currentTimeProperty().addListener(this.playButtonListener);
+
+            this.videoSliderListener = observable -> {
+                if (videoSlider.isPressed()) {
+                    player.seek(player.getMedia().getDuration().multiply(videoSlider.getValue() / 100));
+                }
+            };
+            videoSlider.valueProperty().addListener(this.videoSliderListener);
+
+            this.volumeSliderListener = observable -> {
+                if(volumeSlider.isPressed()){
+                    player.setVolume(volumeSlider.getValue()/100);
+                }
+            };
+            this.volumeSlider.valueProperty().addListener(this.volumeSliderListener);
+        }
+
+    }
+
+    private void updateSliderValues(MediaPlayer player) {
+        Platform.runLater(() -> {
+            if(!volumeSlider.isPressed()){
+                this.videoSlider.setValue(player.getCurrentTime().toMillis() / player.getTotalDuration().toMillis() * 100);
+            }
+        });
+    }
+
     @Override
     public void notify(DataFile dataFile) {
 
@@ -61,11 +156,8 @@ public class FilePropertyController implements FileObserver {
 
     void updateThumbnail(DataFile f, boolean set) throws IOException, InterruptedException, URISyntaxException {
 
-        this.mediaView.setVisible(false);
-        if(mediaView.getMediaPlayer() != null) {
-            this.mediaView.getMediaPlayer().pause();
-        }
-        playIcon.setOnMouseClicked(this::playVideo);
+        hideMediaPlayerVideo();
+
 
         String newName = f.getPath().replace("\\", "+");
         newName = newName.replace("/", "+");
@@ -82,6 +174,7 @@ public class FilePropertyController implements FileObserver {
         if (!image.exists()) {
             Image img = null;
             switch (f.getType()){
+                case "webm":
                 case "mp4": img = createVideoThumbnail(f, outpath); break;
                 case "jpg":
                 case "png":
@@ -96,6 +189,18 @@ public class FilePropertyController implements FileObserver {
                 this.thumbnail.setImage(new Image(image.toURI().toString()));
             }
         }
+    }
+
+    private void hideMediaPlayerVideo() {
+        this.mediaView.setVisible(false);
+        this.videoSlider.setVisible(false);
+        this.volumeSlider.setVisible(false);
+        this.playButton.setVisible(false);
+
+        if(mediaView.getMediaPlayer() != null) {
+            this.mediaView.getMediaPlayer().pause();
+        }
+        playIcon.setOnMouseClicked(this::playVideo);
     }
 
     protected void hideNameEdit() {
@@ -303,39 +408,36 @@ public class FilePropertyController implements FileObserver {
         alert.showAndWait();
     }
 
-
+    MediaPlayer mediaPlayer;
     public void playVideo(MouseEvent mouseEvent) {
         File f = new File(pathLabel.getText());
         Media media = new Media(f.toURI().toString());
-        MediaPlayer mediaPlayer = new MediaPlayer(media);
+        mediaPlayer = new MediaPlayer(media);
         this.mediaView.setMediaPlayer(mediaPlayer);
         this.mediaView.setVisible(true);
         mediaPlayer.play();
-        playIcon.setVisible(false);
+        this.playIcon.setVisible(false);
+        this.videoSlider.setVisible(true);
+        this.volumeSlider.setVisible(true);
+        this.playButton.setVisible(true);
 
-        var ref = new Object() {
-            boolean isPlaying = true;
-        };
+        initializeVideoControl();
 
         playIcon.setOnMouseClicked(mouseEvent1 -> {
             mediaPlayer.play();
-            ref.isPlaying = true;
             playIcon.setVisible(false);
         });
 
         mediaView.setOnMouseClicked(mouseEvent1 -> {
-            if(ref.isPlaying){
+            if(mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
                 mediaPlayer.pause();
-                ref.isPlaying = false;
                 playIcon.setVisible(true);
             }else{
                 mediaPlayer.play();
-                ref.isPlaying = true;
                 playIcon.setVisible(false);
             }
         });
     }
-
 
     public Label getNameLabel() {
         return this.nameLabel;

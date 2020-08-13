@@ -41,7 +41,7 @@ public class DataFile {
             name = file.getName().substring(0,li);
         }
         this.name = name;
-        this.size = file.getTotalSpace();
+        this.size = file.length();
         this.changeDate = attr.lastModifiedTime();
         this.type = extension;
         this.path = file.getAbsolutePath();

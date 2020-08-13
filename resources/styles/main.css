@@ -58,3 +58,17 @@
 	-fx-border-color: red;
 }
 
+.slider .track {
+	-fx-background-color: -fx-dark-grey;
+}
+
+.slider .thumb{
+	-fx-background-color: -fx-primary-purple;
+}
+
+.pause-button {
+	-fx-background-color: -fx-dark-grey;
+	-fx-text-fill: white;
+	-fx-font-weight: 3pt;
+
+}

@@ -2,6 +2,7 @@
 * {
 	-fx-primary-grey: #444752;
 	-fx-dark-grey: #282a30;
+	-fx-medium-grey: #373a42;
 	-fx-ligther-grey: #5c6070;
 
 	-fx-primary-purple: #ab467f;
@@ -25,15 +26,31 @@
 	-fx-background-color: -fx-ligther-grey;
 }
 
-.list-item{
+.list-cell .label{
 	-fx-text-fill: white;
-	-fx-padding: 5px;
-	-fx-text-alignment: center;
 }
 
-.list-item:hover {
-	/*-fx-background-color: -fx-primary-purple;*/
+.list-cell {
+	-fx-text-fill: white;
+	-fx-padding: 10px;
+	-fx-background-color: -fx-dark-grey;
 }
+
+.list-cell:filled:selected:focused, .list-cell:filled:selected {
+	-fx-text-fill: white;
+    -fx-background-color: linear-gradient(-fx-primary-purple 50%, -fx-dark-purple 100%);
+}
+
+.list-cell:odd {
+	-fx-text-fill: white;
+    -fx-cell-hover-color: -fx-primary-purple;
+    -fx-background-color: -fx-primary-grey;
+}
+
+.list-cell:filled:hover {
+    -fx-cell-hover-color: -fx-primary-purple;
+}
+
 
 .file-property{
 	-fx-text-fill: white;
@@ -69,6 +86,7 @@
 .pause-button {
 	-fx-background-color: -fx-dark-grey;
 	-fx-text-fill: white;
-	-fx-font-weight: 3pt;
+	-fx-font-weight: 9;
+	-fx-text-alignment: center;
 
 }

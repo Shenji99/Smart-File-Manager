@@ -4,6 +4,7 @@ import backend.DataFile;
 import backend.FileManager;
 import backend.FileObserver;
 import javafx.event.Event;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.input.Dragboard;
@@ -67,27 +68,18 @@ public class FileListController implements FileObserver {
         for(int i = 0; i < files.size(); i++) {
             DataFile df = files.get(i);
             if(!df.getType().isEmpty()){
-                fileList.getItems().add(createListItem(df));
+                fileList.getItems().add(createListItem(df, i));
             }
         }
     }
 
     public void updateView(String path) {
         fileList.getItems().clear();
-        try {
-            ArrayList<DataFile> files = fileManager.getFiles(path);
-
-            for (DataFile df : files) {
-                if (!df.getType().isEmpty()) {
-                    fileList.getItems().add(createListItem(df));
-                }
-            }
-        }catch(Exception e){
-            e.printStackTrace();
-        }
+        ArrayList<DataFile> files = fileManager.getFiles(path);
+        updateView(files);
     }
 
-    public HBox createListItem(DataFile df) {
+    public HBox createListItem(DataFile df, int index) {
         HBox nameWrapper = new HBox();
         Label name = new Label(df.getName());
         nameWrapper.setMinWidth(100);
@@ -113,19 +105,16 @@ public class FileListController implements FileObserver {
         pathWrapper.setMinWidth(100);
         pathWrapper.getChildren().add(lpath);
 
-
-//            addStyleClass("list-item", nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
-//
-//            if(i % 2 == 0){
-//                addStyleClass("light-grey-bg", nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
-//            }else {
-//                addStyleClass("dark-background", nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
-//            }
-
         HBox a = new HBox();
         a.setSpacing(10);
         a.getChildren().addAll(nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
         return a;
+    }
+
+    private void addStyleClass(String s, Node...n) {
+        for(Node node: n){
+            node.getStyleClass().add(s);
+        }
     }
 
     public void listViewItemClicked(Event event) {

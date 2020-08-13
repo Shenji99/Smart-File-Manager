@@ -11,6 +11,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.media.MediaView;
 
@@ -27,6 +28,8 @@ public class MainScreenController implements Initializable {
     @FXML private ImageView thumbnail;
     @FXML private ImageView playIcon;
     @FXML private MediaView mediaView;
+
+    @FXML private HBox controlsWrapper;
     @FXML private Slider videoSlider;
     @FXML private Button pauseVideoButton;
     @FXML private Slider volumeSlider;
@@ -52,11 +55,6 @@ public class MainScreenController implements Initializable {
 
     }
 
-    private void addStyleClass(String s, Node...n) {
-        for(Node node: n){
-            node.getStyleClass().add(s);
-        }
-    }
 
     protected void showFileInExplorer(String path) {
         try {
@@ -206,5 +204,9 @@ public class MainScreenController implements Initializable {
 
     public Slider getVideoVolumeSlider() {
         return volumeSlider;
+    }
+
+    public HBox getControlsWrapper() {
+        return controlsWrapper;
     }
 }

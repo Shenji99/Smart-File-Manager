@@ -15,6 +15,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
@@ -38,6 +39,7 @@ public class FilePropertyController implements FileObserver {
     private ImageView playIcon;
     private MediaView mediaView;
 
+    private HBox controlsWrapper;
     private Slider videoSlider;
     private Button playButton;
     private Slider volumeSlider;
@@ -56,6 +58,7 @@ public class FilePropertyController implements FileObserver {
         this.videoSlider = mainScreenController.getVideoSlider();
         this.playButton = mainScreenController.getVideoPauseButton();
         this.volumeSlider = mainScreenController.getVideoVolumeSlider();
+        this.controlsWrapper = mainScreenController.getControlsWrapper();
 
         this.videoSlider.setValue(0);
         this.volumeSlider.setValue(30);
@@ -192,10 +195,7 @@ public class FilePropertyController implements FileObserver {
     }
 
     private void hideMediaPlayerVideo() {
-        this.mediaView.setVisible(false);
-        this.videoSlider.setVisible(false);
-        this.volumeSlider.setVisible(false);
-        this.playButton.setVisible(false);
+        setMediaControlVisibility(false);
 
         if(mediaView.getMediaPlayer() != null) {
             this.mediaView.getMediaPlayer().pause();
@@ -414,12 +414,9 @@ public class FilePropertyController implements FileObserver {
         Media media = new Media(f.toURI().toString());
         mediaPlayer = new MediaPlayer(media);
         this.mediaView.setMediaPlayer(mediaPlayer);
-        this.mediaView.setVisible(true);
         mediaPlayer.play();
         this.playIcon.setVisible(false);
-        this.videoSlider.setVisible(true);
-        this.volumeSlider.setVisible(true);
-        this.playButton.setVisible(true);
+        setMediaControlVisibility(true);
 
         initializeVideoControl();
 
@@ -437,6 +434,14 @@ public class FilePropertyController implements FileObserver {
                 playIcon.setVisible(false);
             }
         });
+    }
+
+    private void setMediaControlVisibility(boolean b) {
+        this.mediaView.setVisible(b);
+        this.videoSlider.setVisible(b);
+        this.volumeSlider.setVisible(b);
+        this.controlsWrapper.setVisible(b);
+        this.playButton.setVisible(b);
     }
 
     public Label getNameLabel() {

@@ -16,6 +16,11 @@
 	-fx-label-text-color: white;
 }
 
+.label {
+	-fx-text-fill: white;
+	-fx-font-size: 12px;
+}
+
 .dark-background {
     -fx-background-color: -fx-dark-grey;
 }

@@ -47,12 +47,21 @@ public class FileManager {
         return null;
     }
 
-    public void sort(List<DataFile> files) {
+    public void sort(List<DataFile> files, String fieldName) throws NoSuchFieldException {
         boolean unsorted = true;
         while (unsorted) {
             unsorted = false;
             for (int i = 0; i < files.size() - 1; i++) {
-                if (files.get(i).getSize() > files.get(i + 1).getSize()) {
+                boolean comparision = false;
+                DataFile f1 = files.get(i);
+                DataFile f2 = files.get(i+1);
+                switch(fieldName){
+                    case "size": comparision = f1.getSize() > f2.getSize(); break;
+                    case "type": comparision = f1.getType().compareTo(f2.getType()) > 0; break;
+                    case "name": comparision = f1.getName().compareTo(f2.getName()) > 0; break;
+                    case "changeDate": comparision = f1.getChangeDate().compareTo(f2.getChangeDate()) >0 ; break;
+                }
+                if (comparision) {
                     DataFile temp = files.get(i);
                     files.set(i, files.get(i + 1));
                     files.set(i + 1, temp);
@@ -101,7 +110,24 @@ public class FileManager {
         }
     }
 
-    public void deleteFile(String path){
+    public void deleteFile(String path) {
         deleteFile(new File(path));
+    }
+
+    public void deleteAllFiles() {
+        this.files.clear();
+    }
+
+
+    public List<DataFile> searchFiles(String text) {
+        ArrayList<DataFile> foundFiles = new ArrayList<>();
+        for(DataFile file: this.files) {
+            for(DataFile child: file.getChildren()){
+                if(child.getName().contains(text)){
+                    foundFiles.add(child);
+                }
+            }
+        }
+        return foundFiles;
     }
 }

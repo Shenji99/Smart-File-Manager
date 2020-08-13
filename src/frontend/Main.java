@@ -1,6 +1,7 @@
 package frontend;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -16,6 +17,11 @@ public class Main extends Application {
         primaryStage.setTitle("Smart File Manager");
         primaryStage.setScene(new Scene(root, 960, 720));
         primaryStage.show();
+
+        primaryStage.setOnCloseRequest(e -> {
+            Platform.exit();
+            System.exit(0);
+        });
     }
 
 

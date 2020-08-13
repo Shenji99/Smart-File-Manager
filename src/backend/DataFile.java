@@ -60,21 +60,6 @@ public class DataFile {
 
     }
 
-    public DataFile(DataFile parent, String name, long size, FileTime changeDate, String type, String path) {
-        this();
-        this.parent = parent;
-        this.name = name;
-        this.size = size;
-        this.changeDate = changeDate;
-        this.type = type;
-        this.path = path;
-
-        try {
-            loadSubfiles();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     private void loadSubfiles() throws IOException {
         File[] dir = new File(this.path).listFiles();
@@ -168,15 +153,19 @@ public class DataFile {
     }
 
     public String getFormattedSize() {
-        if(this.size >= 1000000000){
-            float res = this.size/1000000000f;
+        return getFormattedSize(this.size);
+    }
+
+    public static String getFormattedSize(long size) {
+        if(size >= 1000000000){
+            float res = size/1000000000f;
             DecimalFormat df = new DecimalFormat();
             df.setMaximumFractionDigits(2);
             return df.format(res)+" GB";
-        }else if(this.size >= 1000000) {
-            return this.size/1000000+" MB";
-        }else if(this.size >= 1000) {
-            return this.size/1000+" KB";
+        }else if(size >= 1000000) {
+            return size/1000000+" MB";
+        }else if(size >= 1000) {
+            return size/1000+" KB";
         }
         return null;
     }

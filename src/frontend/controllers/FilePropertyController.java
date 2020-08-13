@@ -17,6 +17,7 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
@@ -30,6 +31,7 @@ public class FilePropertyController implements FileObserver {
 
     private final MainScreenController mainScreenController;
 
+    private VBox propertiesWrapper;
     private StackPane nameStackPane;
     private Label nameLabel;
     private Label pathLabel;
@@ -53,8 +55,9 @@ public class FilePropertyController implements FileObserver {
 
 
     public FilePropertyController(MainScreenController mainScreenController) {
-
         this.mainScreenController = mainScreenController;
+
+        this.propertiesWrapper = mainScreenController.getPropertiesWrapper();
         this.thumbnail = mainScreenController.getThumbnail();
         this.playIcon = mainScreenController.getPlayIcon();
         this.mediaView = mainScreenController.getMediaView();
@@ -241,7 +244,6 @@ public class FilePropertyController implements FileObserver {
             nameLabel.setVisible(true);
         }
     }
-
 
     private Image createImageThumbnail(DataFile f, String outpath) throws IOException, InterruptedException {
         String screenshotCmd = "ffmpeg -i \"" + f.getPath() + "\" -vf scale=320:-1 \"" + outpath + "\"";
@@ -485,7 +487,10 @@ public class FilePropertyController implements FileObserver {
         }catch (Exception e){
             e.printStackTrace();
         }
+    }
 
+    public void clearPanel() {
+        this.propertiesWrapper.setVisible(false);
     }
 
     private void setMediaControlVisibility(boolean b) {
@@ -512,5 +517,7 @@ public class FilePropertyController implements FileObserver {
         this.nameStackPane = nameStackPane;
     }
 
-
+    public void unhidePanel() {
+        this.propertiesWrapper.setVisible(true);
+    }
 }

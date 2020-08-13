@@ -24,12 +24,17 @@ public class FileListController implements FileObserver {
     private final FileManager fileManager;
 
     private final MainScreenController mainScreenController;
+    private Label filesAmountLabel;
+    private Label filesTotalSizeLabel;
 
     public FileListController(MainScreenController mainScreenController) {
         this.mainScreenController = mainScreenController;
 
         this.fileList = this.mainScreenController.getFileList();
         this.fileManager = this.mainScreenController.getFileManager();
+
+        this.filesAmountLabel = mainScreenController.getFilesAmountLabel();
+        this.filesTotalSizeLabel = mainScreenController.getFilesTotalSizeLabel();
 
         fileList.setOnDragOver(event -> {
             event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
@@ -65,14 +70,21 @@ public class FileListController implements FileObserver {
 
     }
 
-    public void updateView(List<DataFile> files){
+    public void updateView(List<DataFile> files) {
+        int fileAmt = 0;
+        long totalSize = 0;
         fileList.getItems().clear();
         for(int i = 0; i < files.size(); i++) {
             DataFile df = files.get(i);
             if(!df.getType().isEmpty()){
                 fileList.getItems().add(createListItem(df, i));
+                fileAmt++;
+                totalSize += df.getSize();
             }
         }
+        this.filesAmountLabel.setText(Integer.toString(fileAmt));
+        this.filesTotalSizeLabel.setText("("+DataFile.getFormattedSize(totalSize)+")");
+
     }
 
     public void updateView(String path) {

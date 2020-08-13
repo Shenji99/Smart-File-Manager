@@ -8,15 +8,18 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.media.MediaView;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -28,6 +31,7 @@ public class MainScreenController implements Initializable {
     @FXML private ImageView playIcon;
     @FXML private MediaView mediaView;
 
+    @FXML private VBox propertiesWrapper;
     @FXML private HBox controlsWrapper;
     @FXML private Slider videoSlider;
     @FXML private Button pauseVideoButton;
@@ -36,16 +40,17 @@ public class MainScreenController implements Initializable {
     @FXML private Label currentTime;
     @FXML private Label videoDuration;
 
+    @FXML private Label filesAmountLabel;
+    @FXML private Label filesTotalSizeLabel;
+
     private FileManager fileManager;
 
     private FileListController fileListController;
     private FilePropertyController filePropertyController;
 
 
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-
         this.fileManager = FileManager.getInstance();
         this.fileListController = new FileListController(this);
         this.filePropertyController = new FilePropertyController(this);
@@ -54,7 +59,6 @@ public class MainScreenController implements Initializable {
         AnchorPane.setRightAnchor(content, 0.0);
         AnchorPane.setTopAnchor(content, 0.0);
         AnchorPane.setBottomAnchor(content, 0.0);
-
     }
 
     protected void showFileInExplorer(String path) {
@@ -67,12 +71,12 @@ public class MainScreenController implements Initializable {
 
     protected void loadThumbnailsInThread() {
         Thread t = new Thread(() -> {
-            if(fileManager.getRootFiles() != null){
+            if(fileManager.getRootFiles() != null) {
                 List<DataFile> files = fileManager.getAllFiles();
-                for(DataFile df: files){
+                for(DataFile df: files) {
                     try {
                         filePropertyController.updateThumbnail(df, false);
-                    } catch (IOException | InterruptedException | URISyntaxException e) {
+                    }catch (IOException | InterruptedException | URISyntaxException e) {
                         e.printStackTrace();
                     }
                 }
@@ -99,6 +103,12 @@ public class MainScreenController implements Initializable {
     }
 
 
+    public void clearListClicked(ActionEvent actionEvent) {
+        this.fileManager.deleteAllFiles();
+        this.filePropertyController.clearPanel();
+        fileListController.updateView(fileManager.getAllFiles());
+    }
+
     @FXML
     public void listViewItemClicked(Event event) {
         if(event.getTarget() != this.filePropertyController.getNameLabel()) {
@@ -108,21 +118,55 @@ public class MainScreenController implements Initializable {
     }
 
 
-    public void orderBySizeClicked(ActionEvent actionEvent) {
-        if(fileManager.getAllFiles() != null){
-            if(((CheckBox) actionEvent.getSource()).isSelected()){
-                List files = fileManager.getAllFiles();
-                fileManager.sort(files);
-                fileListController.updateView(files);
-            }else {
-                fileListController.updateView(fileManager.getAllFiles());
-            }
+    public void orderBySizeClicked(ActionEvent actionEvent) throws NoSuchFieldException {
+        if(fileManager.getAllFiles() != null) {
+            List files = fileManager.getAllFiles();
+            fileManager.sort(files, "size");
+            fileListController.updateView(files);
+        }
+    }
+
+    public void orderByTypeClicked(ActionEvent actionEvent) throws NoSuchFieldException {
+        if(fileManager.getAllFiles() != null) {
+            List files = fileManager.getAllFiles();
+            fileManager.sort(files, "type");
+            fileListController.updateView(files);
+        }
+    }
+
+    public void orderByNameClicked(ActionEvent actionEvent) throws NoSuchFieldException {
+        if(fileManager.getAllFiles() != null) {
+            List files = fileManager.getAllFiles();
+            fileManager.sort(files, "name");
+            fileListController.updateView(files);
+        }
+    }
+
+    public void orderByDateClicked(ActionEvent actionEvent) throws NoSuchFieldException {
+        if(fileManager.getAllFiles() != null) {
+            List files = fileManager.getAllFiles();
+            fileManager.sort(files, "changeDate");
+            fileListController.updateView(files);
         }
     }
 
     public void updateFileProperties(Event event, DataFile file) throws IOException, InterruptedException, URISyntaxException {
         this.filePropertyController.updateFileProperties(event, file);
+        this.filePropertyController.unhidePanel();
     }
+
+
+    public void searchFiles(KeyEvent keyEvent) {
+        TextField src = (TextField) keyEvent.getSource();
+        if(!src.getText().isEmpty()){
+            ArrayList<DataFile> found = (ArrayList<DataFile>) fileManager.searchFiles(src.getText());
+            fileListController.updateView(found);
+        }else {
+            fileListController.updateView(fileManager.getAllFiles());
+        }
+    }
+
+
 
     public ListView getFileList() {
         return fileList;
@@ -210,5 +254,17 @@ public class MainScreenController implements Initializable {
 
     public Label getVideoDuratioNLabel() {
         return videoDuration;
+    }
+
+    public VBox getPropertiesWrapper() {
+        return this.propertiesWrapper;
+    }
+
+    public Label getFilesAmountLabel() {
+        return this.filesAmountLabel;
+    }
+
+    public Label getFilesTotalSizeLabel() {
+        return filesTotalSizeLabel;
     }
 }

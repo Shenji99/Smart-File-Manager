@@ -20,6 +20,9 @@ import java.util.List;
 
 public class FileListController implements FileObserver {
 
+    private static final int TAG_THREAD_AMOUNT = 15;
+    private static final int EXIF_MAX_FILES_FOR_CMD = 20;
+
     private final ListView fileList;
     private final FileManager fileManager;
 
@@ -55,8 +58,7 @@ public class FileListController implements FileObserver {
                     }
                 }
                 this.mainScreenController.loadThumbnailsInThread();
-                //buggy
-                //this.fileManager.setTags();
+                this.fileManager.setTags(TAG_THREAD_AMOUNT, EXIF_MAX_FILES_FOR_CMD);
                 updateView(fileManager.getAllFiles());
                 success = true;
             }

@@ -2,7 +2,6 @@ package backend;
 
 import backend.exceptions.InvalidFileNameException;
 import backend.exceptions.UnexpectedErrorException;
-import jdk.jfr.Category;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,8 +13,6 @@ import java.nio.file.attribute.FileTime;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 public class DataFile {
@@ -27,6 +24,7 @@ public class DataFile {
     private String path;
 
     private ArrayList<String> tags;
+    private boolean tagsLoaded;
     private ArrayList<DataFile> files;
 
     private DataFile parent;
@@ -34,6 +32,7 @@ public class DataFile {
     public DataFile() {
         this.files = new ArrayList<>();
         this.tags = new ArrayList<>();
+        this.tagsLoaded = false;
     }
 
     public DataFile(DataFile parent, File file) throws IOException {
@@ -273,8 +272,18 @@ public class DataFile {
     }
 
     public void addTag(String tag) {
-        if(!this.tags.contains(tag)){
+        if(!this.tags.contains(tag)) {
             this.tags.add(tag);
         }
     }
+
+    public boolean isTagsLoaded() {
+        return tagsLoaded;
+    }
+
+    public void setTagsLoaded(boolean tagsLoaded) {
+        this.tagsLoaded = tagsLoaded;
+    }
 }
+
+

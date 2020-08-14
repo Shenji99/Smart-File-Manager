@@ -201,13 +201,10 @@
                         </GridPane>
                      </items>
                   </SplitPane>
-                  <HBox prefHeight="93.0" prefWidth="352.0">
+                  <HBox prefHeight="93.0" prefWidth="352.0" styleClass="medium-dark-background">
                      <children>
                         <Label alignment="TOP_LEFT" minWidth="44.0" prefHeight="27.0" prefWidth="44.0" styleClass="file-property" text="Tags:" />
                         <HBox fx:id="fileTagsBox" prefHeight="70.0" prefWidth="408.0" spacing="10.0">
-                           <HBox.margin>
-                              <Insets />
-                           </HBox.margin>
                            <padding>
                               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                            </padding>
@@ -220,7 +217,7 @@
                         <Insets left="1.0" />
                      </padding>
                   </HBox>
-                  <BorderPane prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: -fx-medium-grey;">
+                  <BorderPane prefHeight="200.0" prefWidth="200.0" styleClass="medium-dark-background">
                      <top>
                         <HBox alignment="CENTER" prefHeight="28.0" prefWidth="352.0" styleClass="dark-background" BorderPane.alignment="TOP_CENTER">
                            <children>

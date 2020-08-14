@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class FileManager {
 
@@ -49,7 +48,7 @@ public class FileManager {
         return null;
     }
 
-    public void sort(List<DataFile> files, String fieldName) throws NoSuchFieldException {
+    public void sort(List<DataFile> files, String fieldName) {
         boolean unsorted = true;
         while (unsorted) {
             unsorted = false;
@@ -101,51 +100,56 @@ public class FileManager {
         }
     }
 
-    //MAYBE DO RECURSIVELY WITH -r
-    /*public void setTags() {
+    /**
+     * this method splits all files into a list of sublists with equally distributed files
+     * for example: [1,2,3,4,5,6,7] -> [1,2], [3,4], [5,6], [7]
+     * each list gets processed by a separate thread
+     * each thread builds the exiftool command. Each command contains "maxFileAmountForCmd" files
+     * (to not reach maximum cmd line length)
+     * It is important to process as many files at a time as possible to reduce computational resources. (opening exiftool is expensive)
+     * The threads then process all the files and extract the tags (Category or Subject) and adds them to the files tag field
+     * @param threadAmount the amount of threads to process the files
+     * @param maxFileAmountForCmd the amount of files for each process
+     */
+    public void setTags(int threadAmount, int maxFileAmountForCmd) {
         List<DataFile> files = getAllFiles();
-        int size = 1;
-        List<List<Object>> listArr = getSublists(files, size);
+        List<List<Object>> listArr = getSublists(files, threadAmount);
 
         for(int i = 0; i < listArr.size(); i++) {
             List li = listArr.get(i);
             if(li.size() > 0) {
                 Thread t = new Thread(() -> {
-                    String cmd = getClass().getResource("/exiftool").getPath() + "/exiftool.exe";
-                    cmd = cmd
-                        .replace("/", "\\")
-                        .substring(1);
-                    cmd += " -S -m -q -fast2 -fileName -directory -category ";
+                    String cmd = Constants.getResourcePath(getClass(), "exiftool", "exiftool.exe");
+                    cmd += " -L -S -m -q -fast2 -fileName -directory -category -XMP:Subject ";
 
                     boolean addedFile = false;
-                    LinkedList<StringBuilder > filePathLists = new LinkedList<>();
-                    StringBuilder fileListString = new StringBuilder();
-                    filePathLists.add(fileListString);
-
+                    LinkedList<String> filePaths = new LinkedList<>();
                     for (Object o : li) {
                         DataFile file = (DataFile) o;
                         if(!file.getType().isEmpty()) {
-                            if(fileListString.length() > 100000) {
-                                fileListString = new StringBuilder();
-                                filePathLists.add(fileListString);
-                            }
-                            fileListString.append("\"").append(file.getPath()).append("\" ");
+                            filePaths.add("\""+file.getPath()+"\" ");
                             addedFile = true;
                         }
                     }
 
                     if(addedFile) {
-                        for(StringBuilder s: filePathLists) {
-                            String runCmd = cmd + s.toString();
-                            System.out.println(runCmd);
-                            try {
-                                Process p = Runtime.getRuntime().exec(runCmd);
-                                p.waitFor();
-                                String res = new String(p.getInputStream().readAllBytes());
-                                System.out.println(new String(p.getErrorStream().readAllBytes()));
-                                System.out.println(res);
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                        String runCmd = cmd;
+                        for(int j = 0; j < filePaths.size(); j++) {
+                            runCmd += filePaths.get(j);
+                            //amount files for each command
+                            if((j != 0  && j % maxFileAmountForCmd == 0) || j == filePaths.size()-1) { //MAYBE EDIT THIS VALUE
+                                System.out.println(runCmd);
+                                try {
+                                    Process p = Runtime.getRuntime().exec(runCmd);
+//                                    System.out.println("waiting for ...");
+                                    p.waitFor();
+                                    String res = new String(p.getInputStream().readAllBytes());
+                                    System.err.println(new String(p.getErrorStream().readAllBytes()));
+                                    updateFiles(res);
+                                    runCmd = cmd;
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                             }
                         }
                     }
@@ -153,7 +157,48 @@ public class FileManager {
                 t.start();
             }
         }
-    }*/
+    }
+
+    /**
+     * gets the response of the exiftool containing the
+     * name of the files, directory and the tags (if the file has)
+     * this method then processes this string and adds the tags to the files
+     *
+     * Example string:
+     *
+     * FileName: file1.mp4
+     * Directory: C:/path/to/file1/
+     * Category: tag1, tag2, tag3
+     * FileName: file2.mp4
+     * Directory: C:/path/to/file2/
+     * FileName: file3.jpg
+     * Directory: C:/path/to/file3/
+     * Subject: tag1, tag2
+     *
+     * @param res the string from exiftool
+     */
+    private void updateFiles(String res) {
+        res = res.trim();
+        String[] lines = res.split("\n");
+        for(int i = 0; i < lines.length-2; i+=2) {
+            String name = lines[i].split(": ")[1].strip();
+            String dir = lines[i+1].split(": ")[1].strip();
+            //category for videos, subject for images
+            if(lines[i+2] != null && (lines[i+2].startsWith("Category") || lines[i+2].startsWith("Subject"))) {
+                String[] categories = lines[i+2].split(":")[1].strip().split(", ");
+                String path = (dir+"/"+name).replace("/", "\\");
+                DataFile file = findFileByPath(path);
+                if(file != null){
+                    file.getTags().clear();
+                    for(String tag: categories) {
+                        file.addTag(tag);
+                    }
+                    file.setTagsLoaded(true);
+                }
+                i++;
+            }
+        }
+    }
 
     private List<List<Object>> getSublists(List list, int size) {
         LinkedList<List<Object>> all = new LinkedList<List<Object>>();

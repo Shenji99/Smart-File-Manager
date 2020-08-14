@@ -1,5 +1,6 @@
 package frontend.controllers;
 
+import backend.Constants;
 import backend.DataFile;
 import backend.FileObserver;
 import backend.exceptions.InvalidFileNameException;
@@ -27,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Iterator;
+import java.util.List;
 
 public class FilePropertyController implements FileObserver {
 
@@ -81,10 +83,11 @@ public class FilePropertyController implements FileObserver {
 
         this.playIcon.setVisible(false);
 
-        String path = getClass().getResource("/images").getPath() + "/playIcon.png";
-        path = path
-            .replace("/", "\\")
-            .substring(1);
+        String path = Constants.getResourcePath(getClass(), "images", "playIcon.png");
+//        String path = getClass().getResource("/images").getPath() + "/playIcon.png";
+//        path = path
+//            .replace("/", "\\")
+//            .substring(1);
         Image playImg = new Image(new File(path).toURI().toString());
         this.playIcon.setImage(playImg);
 
@@ -194,11 +197,12 @@ public class FilePropertyController implements FileObserver {
         newName = newName.replace("/", "+");
         newName = newName.replace(":", "+");
 
-        String outpath = getClass().getResource("/thumbnails")
-                .getPath() + "/" + newName + ".jpg";
-        outpath = outpath
-                .replace("/", "\\")
-                .substring(1);
+        String outpath = Constants.getResourcePath(getClass(), "thumbnails", newName+".jpg");
+//        String outpath = getClass().getResource("/thumbnails")
+//                .getPath() + "/" + newName + ".jpg";
+//        outpath = outpath
+//                .replace("/", "\\")
+//                .substring(1);
 
         File image = new File(outpath);
 
@@ -421,18 +425,50 @@ public class FilePropertyController implements FileObserver {
             default: this.playIcon.setVisible(false);
         }
 
-        this.updateTags(f, true);
+        this.updateTags(f);
+//        this.updateTags(f, true);
 
         this.updateThumbnail(f, true);
+    }
+
+    private void updateTags(DataFile f) {
+        this.fileTagsBox.getChildren().clear();
+        if(f.isTagsLoaded()){
+            List<String> tags = f.getTags();
+            for(String tag: tags){
+                StackPane stack = new StackPane();
+                Label l = new Label(tag);
+                l.setAlignment(Pos.CENTER);
+                l.getStyleClass().add("tag");
+
+                stack.getChildren().add(l);
+                this.fileTagsBox.getChildren().add(l);
+            }
+        }else {
+            try{
+                setLoadingSpinner();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    private void setLoadingSpinner() {
+        ImageView spinnerIv = new ImageView();
+        spinnerIv.setFitHeight(40);
+        spinnerIv.setFitWidth(40);
+        String pth = Constants.getResourcePath(getClass(), "images", "spinner2.gif");
+        Image spinner = new Image(new File(pth).toURI().toString());
+        spinnerIv.setImage(spinner);
+
+        this.fileTagsBox.getChildren().add(spinnerIv);
     }
 
     private void updateTags(DataFile f, boolean set) {
         try {
             this.fileTagsBox.getChildren().clear();
-            String cmd = getClass().getResource("/exiftool").getPath() + "/exiftool.exe";
-            cmd = cmd
-                .replace("/", "\\")
-                .substring(1);
+            String cmd = Constants.getResourcePath(getClass(), "exiftool", "exiftool.exe");
             cmd += " -S -m -q -fast2 -category ";
             cmd += "\"" + f.getPath() + "\"";
 
@@ -561,4 +597,5 @@ public class FilePropertyController implements FileObserver {
     public void unhidePanel() {
         this.propertiesWrapper.setVisible(true);
     }
+
 }

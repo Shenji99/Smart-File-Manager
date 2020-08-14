@@ -30,6 +30,9 @@
 .dark-background {
     -fx-background-color: -fx-dark-grey;
 }
+.medium-dark-background {
+	-fx-background-color: -fx-medium-grey;
+}
 
 .primary-grey-bg {
 	-fx-background-color: -fx-primary-grey;
@@ -141,4 +144,6 @@
 .menu-item:hover {
 	-fx-background-color: -fx-primary-purple;
 }
+
+
 

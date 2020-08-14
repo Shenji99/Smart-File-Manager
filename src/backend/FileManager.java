@@ -142,23 +142,23 @@ public class FileManager {
                     }
 
                     if(addedFile) {
-                        String runCmd = cmd;
+                        StringBuilder runCmd = new StringBuilder(cmd);
                         for(int j = 0; j < filePaths.size(); j++) {
-                            runCmd += filePaths.get(j);
+                            runCmd.append(filePaths.get(j));
                             //amount files for each command
                             if((j != 0  && j % EXIF_MAX_FILES_FOR_CMD == 0) || j == filePaths.size()-1) { //MAYBE EDIT THIS VALUE
 //                                System.out.println(runCmd);
                                 try {
-                                    Process p = Runtime.getRuntime().exec(runCmd);
+                                    Process p = Runtime.getRuntime().exec(runCmd.toString());
                                     //System.out.println("waiting for ...");
                                     p.waitFor();
                                     String res = new String(p.getInputStream().readAllBytes());
-//                                    String err = new String(p.getErrorStream().readAllBytes()).trim();
-//                                    if(!err.isEmpty()){
-//                                        System.err.println(err);
-//                                    }
+                                    String err = new String(p.getErrorStream().readAllBytes()).trim();
+                                    if(!err.isEmpty()){
+                                        System.err.println(err);
+                                    }
                                     updateFiles(res);
-                                    runCmd = cmd;
+                                    runCmd = new StringBuilder(cmd);
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
@@ -195,11 +195,11 @@ public class FileManager {
 //        System.out.println(res);
 //        System.out.println(" B ============ ");
         String[] lines = res.split("\n");
-        int n = 0;
-        if(lines.length > 2){
-            n = 2;
-        }
-        for(int i = 0; i < lines.length-n; i+=2) {
+//        int n = 0;
+//        if(lines.length > 2){
+//            n = 2;
+//        }
+        for(int i = 0; i < lines.length; i+=2) {
 //            System.out.print("i:"+i+"  n:"+n + "   lines.length:"+lines.length + "    lines.length-n:"+(lines.length-n)+"   ");
             String name = lines[i].split(": ")[1].strip();
 //            System.out.println(name);

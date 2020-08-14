@@ -2,6 +2,7 @@ package backend;
 
 import backend.exceptions.InvalidFileNameException;
 import backend.exceptions.UnexpectedErrorException;
+import jdk.jfr.Category;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +14,9 @@ import java.nio.file.attribute.FileTime;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 public class DataFile {
 
@@ -21,6 +25,7 @@ public class DataFile {
     private FileTime changeDate;
     private String type;
     private String path;
+
     private ArrayList<String> tags;
     private ArrayList<DataFile> files;
 
@@ -52,12 +57,42 @@ public class DataFile {
         this.changeDate = attr.lastModifiedTime();
         this.path = file.getAbsolutePath();
 
+//        loadFileMetaData();
+
         try {
             loadSubfiles();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+    }
+
+    private void loadFileMetaData() {
+        try {
+            String path = getClass().getResource("/exiftool").getPath() + "/exiftool.exe";
+            path = path
+                .replace("/", "\\")
+                .substring(1);
+
+            Process p = Runtime.getRuntime().exec(path + " -category \"" + this.path+"\"");
+            p.waitFor();
+            String res = new String(p.getInputStream().readAllBytes());
+            System.out.println(res);
+//            for(String s: res){
+//                System.out.println(s);
+//                String[] vals = s.split(":");
+//                String key = vals[0].strip();
+//                String value = vals[1].strip();
+//                metaData.put(key, value);
+//            }
+            if(getTags() != null){
+                for(String tag: getTags()) {
+                    System.out.println(tag);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -177,6 +212,10 @@ public class DataFile {
 
     //GETTER SETTER
 
+    public List<String> getTags() {
+        return this.tags;
+    }
+
     public String getName() {
         return name;
     }
@@ -217,14 +256,6 @@ public class DataFile {
         this.path = path;
     }
 
-    public ArrayList<String> getTags() {
-        return tags;
-    }
-
-    public void setTags(ArrayList<String> tags) {
-        this.tags = tags;
-    }
-
     public ArrayList<DataFile> getFiles() {
         return files;
     }
@@ -241,4 +272,9 @@ public class DataFile {
         this.parent = parent;
     }
 
+    public void addTag(String tag) {
+        if(!this.tags.contains(tag)){
+            this.tags.add(tag);
+        }
+    }
 }

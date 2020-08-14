@@ -3,7 +3,9 @@ package backend;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class FileManager {
 
@@ -99,6 +101,87 @@ public class FileManager {
         }
     }
 
+    //MAYBE DO RECURSIVELY WITH -r
+    /*public void setTags() {
+        List<DataFile> files = getAllFiles();
+        int size = 1;
+        List<List<Object>> listArr = getSublists(files, size);
+
+        for(int i = 0; i < listArr.size(); i++) {
+            List li = listArr.get(i);
+            if(li.size() > 0) {
+                Thread t = new Thread(() -> {
+                    String cmd = getClass().getResource("/exiftool").getPath() + "/exiftool.exe";
+                    cmd = cmd
+                        .replace("/", "\\")
+                        .substring(1);
+                    cmd += " -S -m -q -fast2 -fileName -directory -category ";
+
+                    boolean addedFile = false;
+                    LinkedList<StringBuilder > filePathLists = new LinkedList<>();
+                    StringBuilder fileListString = new StringBuilder();
+                    filePathLists.add(fileListString);
+
+                    for (Object o : li) {
+                        DataFile file = (DataFile) o;
+                        if(!file.getType().isEmpty()) {
+                            if(fileListString.length() > 100000) {
+                                fileListString = new StringBuilder();
+                                filePathLists.add(fileListString);
+                            }
+                            fileListString.append("\"").append(file.getPath()).append("\" ");
+                            addedFile = true;
+                        }
+                    }
+
+                    if(addedFile) {
+                        for(StringBuilder s: filePathLists) {
+                            String runCmd = cmd + s.toString();
+                            System.out.println(runCmd);
+                            try {
+                                Process p = Runtime.getRuntime().exec(runCmd);
+                                p.waitFor();
+                                String res = new String(p.getInputStream().readAllBytes());
+                                System.out.println(new String(p.getErrorStream().readAllBytes()));
+                                System.out.println(res);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                });
+                t.start();
+            }
+        }
+    }*/
+
+    private List<List<Object>> getSublists(List list, int size) {
+        LinkedList<List<Object>> all = new LinkedList<List<Object>>();
+
+        for(int i = 0; i < size; i++){
+            all.add(new LinkedList<>());
+        }
+        int n = 0;
+        for(int i = 0; i < list.size(); i++) {
+            all.get(n).add(list.get(i));
+            n++;
+            if(n > all.size()-1){
+                n = 0;
+            }
+        }
+
+        for(List l: all) {
+            System.out.print(l.size()+"[");
+            for(Object df: l){
+                System.out.print(((DataFile)df).getName() +", ");
+            }
+            System.out.print("]");
+            System.out.println();
+        }
+
+        return all;
+    }
+
     public void deleteFile(File f){
         if(f != null){
             DataFile file = findFileByPath(f.getAbsolutePath());
@@ -123,7 +206,7 @@ public class FileManager {
         ArrayList<DataFile> foundFiles = new ArrayList<>();
         for(DataFile file: this.files) {
             for(DataFile child: file.getChildren()){
-                if(child.getName().contains(text)){
+                if(child.getName().contains(text) || child.getName().toLowerCase().contains(text.toLowerCase())){
                     foundFiles.add(child);
                 }
             }

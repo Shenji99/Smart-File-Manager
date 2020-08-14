@@ -7,6 +7,7 @@ import backend.exceptions.UnexpectedErrorException;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.event.Event;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -48,6 +49,7 @@ public class FilePropertyController implements FileObserver {
     private final Slider volumeSlider;
     private Label currentTime;
     private Label videoDuration;
+    private HBox fileTagsBox;
 
     private InvalidationListener videoSliderListener;
     private InvalidationListener volumeSliderListener;
@@ -67,6 +69,7 @@ public class FilePropertyController implements FileObserver {
         this.controlsWrapper = mainScreenController.getControlsWrapper();
         this.currentTime = mainScreenController.getCurrentTimeLabel();
         this.videoDuration = mainScreenController.getVideoDuratioNLabel();
+        this.fileTagsBox = mainScreenController.getFileTagsBox();
 
         this.controlsWrapper.setMaxWidth(this.mediaView.getFitWidth());
         this.controlsWrapper.setMaxHeight(this.mediaView.getFitHeight());
@@ -418,7 +421,45 @@ public class FilePropertyController implements FileObserver {
             default: this.playIcon.setVisible(false);
         }
 
+        this.updateTags(f, true);
+
         this.updateThumbnail(f, true);
+    }
+
+    private void updateTags(DataFile f, boolean set) {
+        try {
+            this.fileTagsBox.getChildren().clear();
+            String cmd = getClass().getResource("/exiftool").getPath() + "/exiftool.exe";
+            cmd = cmd
+                .replace("/", "\\")
+                .substring(1);
+            cmd += " -S -m -q -fast2 -category ";
+            cmd += "\"" + f.getPath() + "\"";
+
+            Process p = Runtime.getRuntime().exec(cmd);
+            p.waitFor();
+            String res = new String(p.getInputStream().readAllBytes());
+            System.err.println(new String(p.getErrorStream().readAllBytes()));
+//            System.out.println(res);
+            if(!res.isEmpty()) {
+                String[] tags = res.split(":")[1].split(",");
+                for(String tag: tags) {
+                    tag = tag.strip();
+                    f.addTag(tag);
+                    if(set) {
+                        StackPane stack = new StackPane();
+                        Label l = new Label(tag);
+                        l.setAlignment(Pos.CENTER);
+                        l.getStyleClass().add("tag");
+
+                        stack.getChildren().add(l);
+                        this.fileTagsBox.getChildren().add(l);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void showError(String message) {

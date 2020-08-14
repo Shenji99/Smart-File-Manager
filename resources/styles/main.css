@@ -21,6 +21,12 @@
 	-fx-font-size: 12px;
 }
 
+.tag {
+	-fx-padding: 5px;
+	-fx-background-color: -fx-primary-purple;
+	-fx-border-radius: 100 100 10 10;
+}
+
 .dark-background {
     -fx-background-color: -fx-dark-grey;
 }
@@ -100,3 +106,39 @@
 #mediaView {
 	-fx-background-color: -fx-dark-grey;
 }
+
+.button, .split-menu-button {
+	-fx-text-fill: white;
+	-fx-background-color: -fx-dark-grey;
+    -fx-background-radius: 0;
+    -fx-padding: 2;
+}
+
+
+.split-menu-button > .arrow-button {
+	-fx-text-fill: white;
+	-fx-background-color: -fx-dark-grey;
+    -fx-background-radius: 0;
+    -fx-padding: 2;
+}
+
+.split-menu-button > .label {
+    -fx-background-color: transparent;
+    -fx-background-insets: -0.2;
+    -fx-background-radius: 3;
+}
+
+.menu, .menu-item, .context-menu {
+    -fx-background-color: -fx-dark-grey;
+}
+
+.menu-item {
+	-fx-text-fill: white;
+	-fx-background-color: -fx-dark-grey;
+	-fx-padding: 3;
+}
+
+.menu-item:hover {
+	-fx-background-color: -fx-primary-purple;
+}
+

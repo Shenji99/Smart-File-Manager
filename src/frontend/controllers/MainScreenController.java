@@ -43,6 +43,8 @@ public class MainScreenController implements Initializable {
     @FXML private Label filesAmountLabel;
     @FXML private Label filesTotalSizeLabel;
 
+    @FXML private HBox fileTagsBox;
+
     private FileManager fileManager;
 
     private FileListController fileListController;
@@ -265,6 +267,10 @@ public class MainScreenController implements Initializable {
     }
 
     public Label getFilesTotalSizeLabel() {
-        return filesTotalSizeLabel;
+        return this.filesTotalSizeLabel;
+    }
+
+    public HBox getFileTagsBox() {
+        return this.fileTagsBox;
     }
 }

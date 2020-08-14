@@ -10,7 +10,6 @@ import javafx.beans.InvalidationListener;
 import javafx.event.Event;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -34,10 +33,14 @@ public class FilePropertyController implements FileObserver {
 
     private final MainScreenController mainScreenController;
 
-    private VBox propertiesWrapper;
+    private final VBox propertiesWrapper;
     private StackPane nameStackPane;
+
     private Label nameLabel;
     private Label pathLabel;
+    private Label sizeLabel;
+    private Label typeLabel;
+    private Label changeDateLabel;
 
     private final ImageView thumbnail;
     private final ImageView playIcon;
@@ -49,9 +52,9 @@ public class FilePropertyController implements FileObserver {
     private final Slider videoSlider;
     private final Button playButton;
     private final Slider volumeSlider;
-    private Label currentTime;
-    private Label videoDuration;
-    private HBox fileTagsBox;
+    private final Label currentTime;
+    private final Label videoDuration;
+    private final HBox fileTagsBox;
 
     private InvalidationListener videoSliderListener;
     private InvalidationListener volumeSliderListener;
@@ -73,6 +76,12 @@ public class FilePropertyController implements FileObserver {
         this.videoDuration = mainScreenController.getVideoDuratioNLabel();
         this.fileTagsBox = mainScreenController.getFileTagsBox();
 
+        this.nameLabel = mainScreenController.getNameLabel();
+        this.pathLabel = mainScreenController.getPathLabel();
+        this.sizeLabel = mainScreenController.getSizeLabel();
+        this.typeLabel = mainScreenController.getTypeLabel();
+        this.changeDateLabel = mainScreenController.getDateLabel();
+
         this.controlsWrapper.setMaxWidth(this.mediaView.getFitWidth());
         this.controlsWrapper.setMaxHeight(this.mediaView.getFitHeight());
 
@@ -84,11 +93,7 @@ public class FilePropertyController implements FileObserver {
         this.playIcon.setVisible(false);
 
         String path = Constants.getResourcePath(getClass(), "images", "playIcon.png");
-//        String path = getClass().getResource("/images").getPath() + "/playIcon.png";
-//        path = path
-//            .replace("/", "\\")
-//            .substring(1);
-        Image playImg = new Image(new File(path).toURI().toString());
+        Image playImg = new Image("file:/"+path);
         this.playIcon.setImage(playImg);
 
     }
@@ -185,12 +190,20 @@ public class FilePropertyController implements FileObserver {
     }
 
     @Override
-    public void notify(DataFile dataFile) {
-
+    public void onFileUpdate(DataFile dataFile) {
+        Platform.runLater(() -> {
+            try {
+                if(this.pathLabel.getText().equals(dataFile.getPath())){
+                    updateFileProperties(dataFile, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
-    void updateThumbnail(DataFile f, boolean set) throws IOException, InterruptedException, URISyntaxException {
-        if(set){
+    void updateThumbnail(DataFile f, boolean set) throws IOException, InterruptedException {
+        if(set) {
             hideMediaPlayerVideo();
         }
         String newName = f.getPath().replace("\\", "+");
@@ -198,12 +211,6 @@ public class FilePropertyController implements FileObserver {
         newName = newName.replace(":", "+");
 
         String outpath = Constants.getResourcePath(getClass(), "thumbnails", newName+".jpg");
-//        String outpath = getClass().getResource("/thumbnails")
-//                .getPath() + "/" + newName + ".jpg";
-//        outpath = outpath
-//                .replace("/", "\\")
-//                .substring(1);
-
         File image = new File(outpath);
 
         if (!image.exists()) {
@@ -288,17 +295,16 @@ public class FilePropertyController implements FileObserver {
     }
 
     public void updateFileProperties(Event event, DataFile f) throws IOException, InterruptedException, URISyntaxException {
-        ListView source = (ListView)event.getSource();
-        Scene scene = source.getScene();
-
         if(event instanceof MouseEvent){
             if(((MouseEvent)event).getClickCount() == 2){
                 this.mainScreenController.showFileInExplorer(f.getPath());
             }
         }
+        updateFileProperties(f, true);
+    }
 
+    public void updateFileProperties(DataFile f, boolean updateThumbnail) throws InterruptedException, IOException, URISyntaxException {
         //NAME
-        nameLabel = (Label) scene.lookup("#nameLabelValue");
         nameLabel.setText(f.getName());
         nameLabel.setOnContextMenuRequested(contextMenuEvent -> {
             ContextMenu cm = new ContextMenu();
@@ -348,7 +354,6 @@ public class FilePropertyController implements FileObserver {
         });
 
         //SIZE
-        Label sizeLabel =  (Label) scene.lookup("#sizeLabelValue");
         sizeLabel.setText(f.getFormattedSize());
         sizeLabel.setOnContextMenuRequested(contextMenuEvent -> {
             ContextMenu cm = new ContextMenu();
@@ -363,7 +368,6 @@ public class FilePropertyController implements FileObserver {
         });
 
         //path
-        pathLabel = (Label) scene.lookup("#pathLabelValue");
         Tooltip tooltip = new Tooltip();
         tooltip.setText(f.getPath());
         pathLabel.setTooltip(tooltip);
@@ -391,7 +395,6 @@ public class FilePropertyController implements FileObserver {
 
 
         //type
-        Label typeLabel = (Label) scene.lookup("#typeLabelValue");
         typeLabel.setText(f.getType());
         typeLabel.setOnContextMenuRequested(contextMenuEvent -> {
             ContextMenu cm = new ContextMenu();
@@ -405,9 +408,8 @@ public class FilePropertyController implements FileObserver {
             cm.show(typeLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
         });
 
-        Label changeDate = (Label) scene.lookup("#changeDateLabel");
-        changeDate.setText(f.formatDate());
-        changeDate.setOnContextMenuRequested(contextMenuEvent -> {
+        changeDateLabel.setText(f.formatDate());
+        changeDateLabel.setOnContextMenuRequested(contextMenuEvent -> {
             ContextMenu cm = new ContextMenu();
             MenuItem copy = new MenuItem("copy");
             copy.setOnAction(actionEvent -> {
@@ -416,7 +418,7 @@ public class FilePropertyController implements FileObserver {
                 Clipboard.getSystemClipboard().setContent(content);
             });
             cm.getItems().add(copy);
-            cm.show(changeDate, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
+            cm.show(changeDateLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
         });
 
         switch (f.getType()){
@@ -427,8 +429,9 @@ public class FilePropertyController implements FileObserver {
 
         this.updateTags(f);
 //        this.updateTags(f, true);
-
-        this.updateThumbnail(f, true);
+        if(updateThumbnail){
+            this.updateThumbnail(f, true);
+        }
     }
 
     private void updateTags(DataFile f) {
@@ -459,7 +462,7 @@ public class FilePropertyController implements FileObserver {
         spinnerIv.setFitHeight(40);
         spinnerIv.setFitWidth(40);
         String pth = Constants.getResourcePath(getClass(), "images", "spinner2.gif");
-        Image spinner = new Image(new File(pth).toURI().toString());
+        Image spinner = new Image("file:/"+pth);
         spinnerIv.setImage(spinner);
 
         this.fileTagsBox.getChildren().add(spinnerIv);

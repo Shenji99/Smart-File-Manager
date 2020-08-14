@@ -2,6 +2,6 @@ package backend;
 
 public interface FileObserver {
 
-    void notify(DataFile dataFile);
+    void onFileUpdate(DataFile dataFile);
 
 }

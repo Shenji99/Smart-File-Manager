@@ -7,6 +7,7 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.control.skin.ListViewSkin;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -45,6 +46,13 @@ public class MainScreenController implements Initializable {
 
     @FXML private HBox fileTagsBox;
 
+    @FXML private Label nameLabelValue;
+    @FXML private Label sizeLabelValue;
+    @FXML private Label pathLabelValue;
+    @FXML private Label typeLabelValue;
+    @FXML private Label changeDateLabel;
+
+
     private FileManager fileManager;
 
     private FileListController fileListController;
@@ -56,6 +64,9 @@ public class MainScreenController implements Initializable {
         this.fileManager = FileManager.getInstance();
         this.fileListController = new FileListController(this);
         this.filePropertyController = new FilePropertyController(this);
+
+        this.fileManager.addObserver(this.fileListController);
+        this.fileManager.addObserver(this.filePropertyController);
 
         AnchorPane.setLeftAnchor(content, 0.0);
         AnchorPane.setRightAnchor(content, 0.0);
@@ -78,7 +89,7 @@ public class MainScreenController implements Initializable {
                 for(DataFile df: files) {
                     try {
                         filePropertyController.updateThumbnail(df, false);
-                    }catch (IOException | InterruptedException | URISyntaxException e) {
+                    }catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -101,7 +112,7 @@ public class MainScreenController implements Initializable {
         if(event.getTarget() != this.filePropertyController.getNameLabel()){
             filePropertyController.hideNameEdit();
         }
-        this.fileListController.listViewItemClicked(event);
+//        this.fileListController.listViewItemClicked(event);
     }
 
 
@@ -272,5 +283,25 @@ public class MainScreenController implements Initializable {
 
     public HBox getFileTagsBox() {
         return this.fileTagsBox;
+    }
+
+    public Label getNameLabel() {
+        return this.nameLabelValue;
+    }
+
+    public Label getPathLabel() {
+        return this.pathLabelValue;
+    }
+
+    public Label getSizeLabel() {
+        return this.sizeLabelValue;
+    }
+
+    public Label getTypeLabel() {
+        return this.typeLabelValue;
+    }
+
+    public Label getDateLabel() {
+        return this.changeDateLabel;
     }
 }

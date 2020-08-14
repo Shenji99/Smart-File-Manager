@@ -7,6 +7,7 @@ import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.skin.ListViewSkin;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -20,15 +21,12 @@ import java.util.List;
 
 public class FileListController implements FileObserver {
 
-    private static final int TAG_THREAD_AMOUNT = 15;
-    private static final int EXIF_MAX_FILES_FOR_CMD = 20;
-
     private final ListView fileList;
     private final FileManager fileManager;
 
     private final MainScreenController mainScreenController;
-    private Label filesAmountLabel;
-    private Label filesTotalSizeLabel;
+    private final Label filesAmountLabel;
+    private final Label filesTotalSizeLabel;
 
     public FileListController(MainScreenController mainScreenController) {
         this.mainScreenController = mainScreenController;
@@ -58,7 +56,7 @@ public class FileListController implements FileObserver {
                     }
                 }
                 this.mainScreenController.loadThumbnailsInThread();
-                this.fileManager.setTags(TAG_THREAD_AMOUNT, EXIF_MAX_FILES_FOR_CMD);
+                this.fileManager.setTags();
                 updateView(fileManager.getAllFiles());
                 success = true;
             }
@@ -70,7 +68,7 @@ public class FileListController implements FileObserver {
     }
 
     @Override
-    public void notify(DataFile dataFile) {
+    public void onFileUpdate(DataFile dataFile) {
 
     }
 
@@ -150,6 +148,7 @@ public class FileListController implements FileObserver {
                 }
             }
         }catch (Exception e){
+            e.printStackTrace();
             //can be ignored
         }
     }

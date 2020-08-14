@@ -8,11 +8,22 @@ import java.util.List;
 
 public class FileManager {
 
+    private static final int TAG_THREAD_AMOUNT = 15;
+    private static final int EXIF_MAX_FILES_FOR_CMD = 20;
+
+    private final LinkedList<FileObserver> observers;
     private static FileManager instance;
-    private ArrayList<DataFile> files;
+    private final ArrayList<DataFile> files;
 
     public FileManager() {
         this.files = new ArrayList<>();
+        this.observers = new LinkedList<>();
+    }
+
+    public void notifyObservers(DataFile file) {
+        for(FileObserver o: observers){
+            o.onFileUpdate(file);
+        }
     }
 
     public static FileManager getInstance() {
@@ -108,12 +119,10 @@ public class FileManager {
      * (to not reach maximum cmd line length)
      * It is important to process as many files at a time as possible to reduce computational resources. (opening exiftool is expensive)
      * The threads then process all the files and extract the tags (Category or Subject) and adds them to the files tag field
-     * @param threadAmount the amount of threads to process the files
-     * @param maxFileAmountForCmd the amount of files for each process
      */
-    public void setTags(int threadAmount, int maxFileAmountForCmd) {
+    public void setTags() {
         List<DataFile> files = getAllFiles();
-        List<List<Object>> listArr = getSublists(files, threadAmount);
+        List<List<Object>> listArr = getSublists(files, TAG_THREAD_AMOUNT);
 
         for(int i = 0; i < listArr.size(); i++) {
             List li = listArr.get(i);
@@ -137,14 +146,17 @@ public class FileManager {
                         for(int j = 0; j < filePaths.size(); j++) {
                             runCmd += filePaths.get(j);
                             //amount files for each command
-                            if((j != 0  && j % maxFileAmountForCmd == 0) || j == filePaths.size()-1) { //MAYBE EDIT THIS VALUE
-                                System.out.println(runCmd);
+                            if((j != 0  && j % EXIF_MAX_FILES_FOR_CMD == 0) || j == filePaths.size()-1) { //MAYBE EDIT THIS VALUE
+//                                System.out.println(runCmd);
                                 try {
                                     Process p = Runtime.getRuntime().exec(runCmd);
-//                                    System.out.println("waiting for ...");
+                                    //System.out.println("waiting for ...");
                                     p.waitFor();
                                     String res = new String(p.getInputStream().readAllBytes());
-                                    System.err.println(new String(p.getErrorStream().readAllBytes()));
+//                                    String err = new String(p.getErrorStream().readAllBytes()).trim();
+//                                    if(!err.isEmpty()){
+//                                        System.err.println(err);
+//                                    }
                                     updateFiles(res);
                                     runCmd = cmd;
                                 } catch (Exception e) {
@@ -179,27 +191,52 @@ public class FileManager {
      */
     private void updateFiles(String res) {
         res = res.trim();
+//        System.out.println("\n\n\n A ============ ");
+//        System.out.println(res);
+//        System.out.println(" B ============ ");
         String[] lines = res.split("\n");
-        for(int i = 0; i < lines.length-2; i+=2) {
+        int n = 0;
+        if(lines.length > 2){
+            n = 2;
+        }
+        for(int i = 0; i < lines.length-n; i+=2) {
+//            System.out.print("i:"+i+"  n:"+n + "   lines.length:"+lines.length + "    lines.length-n:"+(lines.length-n)+"   ");
             String name = lines[i].split(": ")[1].strip();
+//            System.out.println(name);
+//            System.out.print("i+1:"+(i+1)+"  n:"+n + "   lines.length:"+lines.length + "    lines.length-n:"+(lines.length-n)+"   ");
             String dir = lines[i+1].split(": ")[1].strip();
+//            System.out.println(dir);
+            String path = (dir+"/"+name).replace("/", "\\");
+            DataFile file = findFileByPath(path);
             //category for videos, subject for images
-            if(lines[i+2] != null && (lines[i+2].startsWith("Category") || lines[i+2].startsWith("Subject"))) {
-                String[] categories = lines[i+2].split(":")[1].strip().split(", ");
-                String path = (dir+"/"+name).replace("/", "\\");
-                DataFile file = findFileByPath(path);
-                if(file != null){
-                    file.getTags().clear();
-                    for(String tag: categories) {
-                        file.addTag(tag);
+            if(i+2 <= lines.length-1){
+                if(lines[i+2] != null && (lines[i+2].startsWith("Category") || lines[i+2].startsWith("Subject"))) {
+//                    System.out.print("i+2:"+(i+2)+"  n:"+n + "   lines.length:"+lines.length + "    lines.length-n:"+(lines.length-n)+"   ");
+//                    System.out.println(lines[i+2]);
+                    String[] categories = lines[i+2].split(":")[1].strip().split(", ");
+                    if(file != null){
+                        file.getTags().clear();
+                        for(String tag: categories) {
+                            file.addTag(tag);
+                        }
                     }
-                    file.setTagsLoaded(true);
+                    i++;
                 }
-                i++;
+            }
+            if(file != null) {
+                file.setTagsLoaded(true);
+                notifyObservers(file);
             }
         }
     }
 
+    /**
+     * distrubutes the items in the given list equally into new sublists
+     * the size parameter defines the number of sublists
+     * @param list input list containing the elements
+     * @param size number of sublists
+     * @return new list containing the sublists
+     */
     private List<List<Object>> getSublists(List list, int size) {
         LinkedList<List<Object>> all = new LinkedList<List<Object>>();
 
@@ -215,14 +252,14 @@ public class FileManager {
             }
         }
 
-        for(List l: all) {
-            System.out.print(l.size()+"[");
-            for(Object df: l){
-                System.out.print(((DataFile)df).getName() +", ");
-            }
-            System.out.print("]");
-            System.out.println();
-        }
+//        for(List l: all) {
+//            System.out.print(l.size()+"[");
+//            for(Object df: l){
+//                System.out.print(((DataFile)df).getName() +", ");
+//            }
+//            System.out.print("]");
+//            System.out.println();
+//        }
 
         return all;
     }
@@ -246,7 +283,6 @@ public class FileManager {
         this.files.clear();
     }
 
-
     public List<DataFile> searchFiles(String text) {
         ArrayList<DataFile> foundFiles = new ArrayList<>();
         for(DataFile file: this.files) {
@@ -257,5 +293,13 @@ public class FileManager {
             }
         }
         return foundFiles;
+    }
+
+    public void removeObserver(FileObserver fo){
+        this.observers.remove(fo);
+    }
+
+    public void addObserver(FileObserver fo){
+        this.observers.add(fo);
     }
 }

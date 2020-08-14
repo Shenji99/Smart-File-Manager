@@ -272,6 +272,7 @@ public class DataFile {
     }
 
     public void addTag(String tag) {
+//        System.out.println("TAG:"+tag);
         if(!this.tags.contains(tag)) {
             this.tags.add(tag);
         }

@@ -6,8 +6,10 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.*;
-import javafx.scene.control.skin.ListViewSkin;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -17,6 +19,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.MediaView;
 
+import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -74,35 +78,6 @@ public class MainScreenController implements Initializable {
         AnchorPane.setBottomAnchor(content, 0.0);
     }
 
-    protected void showFileInExplorer(String path) {
-        try {
-            Runtime.getRuntime().exec("explorer.exe /select," + path);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    protected void loadThumbnailsInThread() {
-        Thread t = new Thread(() -> {
-            if(fileManager.getRootFiles() != null) {
-                List<DataFile> files = fileManager.getAllFiles();
-                for(DataFile df: files) {
-                    try {
-                        filePropertyController.updateThumbnail(df, false);
-                    }catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-        t.start();
-    }
-
-    protected void removeOldThumbnailsInThread() {
-        //TODO
-    }
-
-
     public ImageView getPlayIcon() {
         return this.playIcon;
     }
@@ -131,7 +106,7 @@ public class MainScreenController implements Initializable {
     }
 
 
-    public void orderBySizeClicked(ActionEvent actionEvent) throws NoSuchFieldException {
+    public void orderBySizeClicked(ActionEvent actionEvent) {
         if(fileManager.getAllFiles() != null) {
             List files = fileManager.getAllFiles();
             fileManager.sort(files, "size");
@@ -139,7 +114,7 @@ public class MainScreenController implements Initializable {
         }
     }
 
-    public void orderByTypeClicked(ActionEvent actionEvent) throws NoSuchFieldException {
+    public void orderByTypeClicked(ActionEvent actionEvent) {
         if(fileManager.getAllFiles() != null) {
             List files = fileManager.getAllFiles();
             fileManager.sort(files, "type");
@@ -147,7 +122,7 @@ public class MainScreenController implements Initializable {
         }
     }
 
-    public void orderByNameClicked(ActionEvent actionEvent) throws NoSuchFieldException {
+    public void orderByNameClicked(ActionEvent actionEvent) {
         if(fileManager.getAllFiles() != null) {
             List files = fileManager.getAllFiles();
             fileManager.sort(files, "name");
@@ -155,7 +130,7 @@ public class MainScreenController implements Initializable {
         }
     }
 
-    public void orderByDateClicked(ActionEvent actionEvent) throws NoSuchFieldException {
+    public void orderByDateClicked(ActionEvent actionEvent) {
         if(fileManager.getAllFiles() != null) {
             List files = fileManager.getAllFiles();
             fileManager.sort(files, "changeDate");
@@ -179,7 +154,9 @@ public class MainScreenController implements Initializable {
         }
     }
 
-
+    public void loadThumbnailsInThread() {
+        this.fileManager.loadThumbnailsInThread(this.filePropertyController);
+    }
 
     public ListView getFileList() {
         return fileList;
@@ -304,4 +281,6 @@ public class MainScreenController implements Initializable {
     public Label getDateLabel() {
         return this.changeDateLabel;
     }
+
+
 }

@@ -1,5 +1,9 @@
 package backend;
 
+import frontend.controllers.FilePropertyController;
+import javafx.scene.image.Image;
+
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -128,7 +132,7 @@ public class FileManager {
             List li = listArr.get(i);
             if(li.size() > 0) {
                 Thread t = new Thread(() -> {
-                    String cmd = Constants.getResourcePath(getClass(), "exiftool", "exiftool.exe");
+                    String cmd = getResourcePath(getClass(), "exiftool", "exiftool.exe");
                     cmd += " -L -S -m -q -fast2 -fileName -directory -category -XMP:Subject ";
 
                     boolean addedFile = false;
@@ -293,6 +297,97 @@ public class FileManager {
             }
         }
         return foundFiles;
+    }
+
+    public static String getResourcePath(Class c, String foldername, String name){
+        String path = c.getResource("/"+foldername).getPath() + "/"+name;
+        path = path
+            .replace("/", "\\")
+            .substring(1);
+        return path;
+    }
+
+    public static String getResourcePath(Class c, String foldername) {
+        return getResourcePath(c, foldername, "");
+    }
+
+    public void loadThumbnailsInThread(FilePropertyController filePropertyController) {
+        Thread t = new Thread(() -> {
+            if(getRootFiles() != null) {
+                List<DataFile> files = getAllFiles();
+                for(DataFile df: files) {
+                    try {
+                        filePropertyController.updateThumbnail(df, false);
+                    }catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        t.start();
+    }
+
+    public void clearThumbnails(String path) {
+        File dir = new File(path);
+        for(File f: dir.listFiles()){
+            f.delete();
+        }
+    }
+
+    public Image createImageThumbnail(DataFile f, String outpath) throws IOException, InterruptedException {
+        String screenshotCmd = "ffmpeg -i \"" + f.getPath() + "\" -vf scale=320:-1 \"" + outpath + "\"";
+        Process p2 = Runtime.getRuntime().exec(screenshotCmd);
+        p2.waitFor();
+        return new Image(new File(outpath).toURI().toString());
+    }
+
+    public Image createVideoThumbnail(DataFile f, String outpath) throws InterruptedException, IOException {
+        //get duration of video
+        String ffprobeCmd = "ffprobe -i \"" + f.getPath() + "\" -show_entries format=duration -v quiet -of csv=\"p=0\"";
+        Process p = Runtime.getRuntime().exec(ffprobeCmd);
+        p.waitFor();
+
+        //make screenshot and save it in folder
+        String s = new String(p.getInputStream().readAllBytes());
+        int output = 0;
+        try{
+            output = Integer.parseInt(s.split("\\.")[0]);
+            output = output / 2;
+        }catch (Exception e){
+            e.printStackTrace();
+            System.out.println("FEHLER AUFGETRETEN: "+s.split("\\.")[0]);
+        }
+
+        String screenshotCmd = "ffmpeg -ss " + output + " -i \"" + f.getPath() + "\" -frames:v 1 -vf scale=320:-1 \"" + outpath+"\"";
+
+        Process p2 = Runtime.getRuntime().exec(screenshotCmd);
+        p2.waitFor();
+        //System.out.println(new String(p2.getInputStream().readAllBytes()));
+        //System.out.println(new String(p2.getErrorStream().readAllBytes()));
+        String s2 = new File(outpath).toURI().toString();
+        System.out.println(s2);
+        return new Image(s2);
+    }
+
+    public Image createImageGifThumbnail(DataFile f) {
+        return new Image(new File(f.getPath()).toURI().toString());
+    }
+
+
+    public void showFileInExplorer(String path) {
+        try {
+            Runtime.getRuntime().exec("explorer.exe /select," + path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void openFile(String path){
+        try {
+            Desktop.getDesktop().open(new File(path));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void removeObserver(FileObserver fo){

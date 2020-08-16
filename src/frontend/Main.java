@@ -1,5 +1,6 @@
 package frontend;
 
+import backend.FileManager;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -20,6 +21,7 @@ public class Main extends Application {
 
         primaryStage.setOnCloseRequest(e -> {
             Platform.exit();
+            FileManager.getInstance().clearThumbnails(FileManager.getResourcePath(getClass(), "thumbnails"));
             System.exit(0);
         });
     }

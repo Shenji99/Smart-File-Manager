@@ -1,8 +1,8 @@
 package backend.exceptions;
 
-public class UnexpectedErrorException extends Throwable {
+public class UnexpectedErrorException extends Exception {
 
-    public UnexpectedErrorException(){
+    public UnexpectedErrorException() {
         super("Unexpected Error occured");
     }
 

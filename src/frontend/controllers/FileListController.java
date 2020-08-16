@@ -5,13 +5,11 @@ import backend.FileManager;
 import backend.FileObserver;
 import javafx.event.Event;
 import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.skin.ListViewSkin;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.TransferMode;
+import javafx.scene.control.MenuItem;
+import javafx.scene.input.*;
 import javafx.scene.layout.HBox;
 
 import java.io.File;
@@ -76,17 +74,15 @@ public class FileListController implements FileObserver {
         int fileAmt = 0;
         long totalSize = 0;
         fileList.getItems().clear();
-        for(int i = 0; i < files.size(); i++) {
-            DataFile df = files.get(i);
-            if(!df.getType().isEmpty()){
-                fileList.getItems().add(createListItem(df, i));
+        for (DataFile df : files) {
+            if (!df.getType().isEmpty()) {
+                fileList.getItems().add(createListItem(df));
                 fileAmt++;
                 totalSize += df.getSize();
             }
         }
         this.filesAmountLabel.setText(Integer.toString(fileAmt));
         this.filesTotalSizeLabel.setText("("+DataFile.getFormattedSize(totalSize)+")");
-
     }
 
     public void updateView(String path) {
@@ -95,7 +91,7 @@ public class FileListController implements FileObserver {
         updateView(files);
     }
 
-    public HBox createListItem(DataFile df, int index) {
+    public HBox createListItem(DataFile df) {
         HBox nameWrapper = new HBox();
         Label name = new Label(df.getName());
         nameWrapper.setMinWidth(100);
@@ -123,14 +119,26 @@ public class FileListController implements FileObserver {
 
         HBox a = new HBox();
         a.setSpacing(10);
+
+        a.setOnContextMenuRequested(contextMenuEvent -> {
+            ContextMenu cm = new ContextMenu();
+            MenuItem open = new MenuItem("Datei öffnen");
+            open.setOnAction(actionEvent -> {
+                FileManager.getInstance().openFile(df.getPath());
+            });
+
+            MenuItem openInExplorer = new MenuItem("In Explorer zeigen");
+            openInExplorer.setOnAction(actionEvent -> {
+                FileManager.getInstance().showFileInExplorer(df.getPath());
+            });
+
+
+            cm.getItems().addAll(open, openInExplorer);
+            cm.show(a, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
+        });
+
         a.getChildren().addAll(nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
         return a;
-    }
-
-    private void addStyleClass(String s, Node...n) {
-        for(Node node: n){
-            node.getStyleClass().add(s);
-        }
     }
 
     public void listViewItemClicked(Event event) {

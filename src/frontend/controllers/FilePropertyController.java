@@ -1,12 +1,13 @@
 package frontend.controllers;
 
-import backend.Constants;
 import backend.DataFile;
+import backend.FileManager;
 import backend.FileObserver;
 import backend.exceptions.InvalidFileNameException;
 import backend.exceptions.UnexpectedErrorException;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -82,17 +83,21 @@ public class FilePropertyController implements FileObserver {
         this.typeLabel = mainScreenController.getTypeLabel();
         this.changeDateLabel = mainScreenController.getDateLabel();
 
+        this.controlsWrapper.setPrefWidth(this.mediaView.getFitWidth());
         this.controlsWrapper.setMaxWidth(this.mediaView.getFitWidth());
-        this.controlsWrapper.setMaxHeight(this.mediaView.getFitHeight());
 
         this.playButton.setText("||");
         this.videoSlider.setValue(0);
         this.volumeSlider.setValue(30);
+
+        clearPanel();
         hideMediaPlayerVideo();
+
+        this.mediaView.setFitHeight(0);
 
         this.playIcon.setVisible(false);
 
-        String path = Constants.getResourcePath(getClass(), "images", "playIcon.png");
+        String path = FileManager.getResourcePath(getClass(), "images", "playIcon.png");
         Image playImg = new Image("file:/"+path);
         this.playIcon.setImage(playImg);
 
@@ -202,7 +207,7 @@ public class FilePropertyController implements FileObserver {
         });
     }
 
-    void updateThumbnail(DataFile f, boolean set) throws IOException, InterruptedException {
+    public void updateThumbnail(DataFile f, boolean set) throws IOException, InterruptedException {
         if(set) {
             hideMediaPlayerVideo();
         }
@@ -210,18 +215,18 @@ public class FilePropertyController implements FileObserver {
         newName = newName.replace("/", "+");
         newName = newName.replace(":", "+");
 
-        String outpath = Constants.getResourcePath(getClass(), "thumbnails", newName+".jpg");
+        String outpath = FileManager.getResourcePath(getClass(), "thumbnails", newName+".jpg");
         File image = new File(outpath);
 
         if (!image.exists()) {
             Image img = null;
             switch (f.getType()){
                 case "webm":
-                case "mp4": img = createVideoThumbnail(f, outpath); break;
+                case "mp4": img = FileManager.getInstance().createVideoThumbnail(f, outpath); break;
                 case "jpg":
                 case "png":
-                case "webp": img = createImageThumbnail(f, outpath); break;
-                case "gif": img = createImageGifThumbnail(f); break;
+                case "webp": img = FileManager.getInstance().createImageThumbnail(f, outpath); break;
+                case "gif": img = FileManager.getInstance().createImageGifThumbnail(f); break;
             }
             if(set){
                 this.thumbnail.setImage(img);
@@ -233,9 +238,6 @@ public class FilePropertyController implements FileObserver {
         }
     }
 
-    private Image createImageGifThumbnail(DataFile f) {
-        return new Image(new File(f.getPath()).toURI().toString());
-    }
 
     private void hideMediaPlayerVideo() {
         setMediaControlVisibility(false);
@@ -259,51 +261,17 @@ public class FilePropertyController implements FileObserver {
         }
     }
 
-    private Image createImageThumbnail(DataFile f, String outpath) throws IOException, InterruptedException {
-        String screenshotCmd = "ffmpeg -i \"" + f.getPath() + "\" -vf scale=320:-1 \"" + outpath + "\"";
-        Process p2 = Runtime.getRuntime().exec(screenshotCmd);
-        p2.waitFor();
-        return new Image(new File(outpath).toURI().toString());
-    }
-
-    public Image createVideoThumbnail(DataFile f, String outpath) throws InterruptedException, IOException {
-        //get duration of video
-        String ffprobeCmd = "ffprobe -i \"" + f.getPath() + "\" -show_entries format=duration -v quiet -of csv=\"p=0\"";
-        Process p = Runtime.getRuntime().exec(ffprobeCmd);
-        p.waitFor();
-
-        //make screenshot and save it in folder
-        String s = new String(p.getInputStream().readAllBytes());
-        int output = 0;
-        try{
-            output = Integer.parseInt(s.split("\\.")[0]);
-            output = output / 2;
-        }catch (Exception e){
-            e.printStackTrace();
-            System.out.println("FEHLER AUFGETRETEN: "+s.split("\\.")[0]);
-        }
-
-        String screenshotCmd = "ffmpeg -ss " + output + " -i \"" + f.getPath() + "\" -frames:v 1 -vf scale=320:-1 \"" + outpath+"\"";
-
-        Process p2 = Runtime.getRuntime().exec(screenshotCmd);
-        p2.waitFor();
-        //System.out.println(new String(p2.getInputStream().readAllBytes()));
-        //System.out.println(new String(p2.getErrorStream().readAllBytes()));
-        String s2 = new File(outpath).toURI().toString();
-        System.out.println(s2);
-        return new Image(s2);
-    }
-
     public void updateFileProperties(Event event, DataFile f) throws IOException, InterruptedException, URISyntaxException {
         if(event instanceof MouseEvent){
             if(((MouseEvent)event).getClickCount() == 2){
-                this.mainScreenController.showFileInExplorer(f.getPath());
+                FileManager.getInstance().showFileInExplorer(f.getPath());
             }
         }
         updateFileProperties(f, true);
     }
 
-    public void updateFileProperties(DataFile f, boolean updateThumbnail) throws InterruptedException, IOException, URISyntaxException {
+    public void updateFileProperties(DataFile f, boolean updateThumbnail) throws InterruptedException, IOException {
+        this.mediaView.setFitHeight(0);
         //NAME
         nameLabel.setText(f.getName());
         nameLabel.setOnContextMenuRequested(contextMenuEvent -> {
@@ -314,44 +282,15 @@ public class FilePropertyController implements FileObserver {
                 content.putString(f.getName());
                 Clipboard.getSystemClipboard().setContent(content);
             });
-            cm.getItems().add(copy);
+
+            MenuItem edit = new MenuItem("Edit");
+            edit.setOnAction(actionEvent -> editFileName(actionEvent, f));
+
+            cm.getItems().addAll(copy, edit);
             cm.show(nameLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
         });
 
-        nameLabel.setOnMouseClicked(mouseEvent -> {
-            if(mouseEvent.getClickCount() == 2) {
-                nameLabel.setVisible(false);
-                TextField textfield = new TextField(nameLabel.getText());
-                textfield.setPrefHeight(nameLabel.getHeight() + 10);
-
-                StackPane nameStackPane = (StackPane) nameLabel.getParent();
-                this.mainScreenController.setNameStackPane(nameStackPane);
-                nameStackPane.getChildren().add(textfield);
-
-                textfield.setOnKeyPressed(event1 -> {
-                    if(event1.getCode().toString().equals("ENTER")) {
-                        String newName = textfield.getText();
-                        if(!newName.equals(f.getName())){
-                            try{
-                                f.rename(newName);
-                                nameLabel.setText(newName);
-                                this.mainScreenController.hideNameEdit();
-                            }catch (InvalidFileNameException e){
-                                //Show error
-                                textfield.getStyleClass().add("error-border");
-                                Tooltip tooltip = new Tooltip();
-                                tooltip.setText(e.getMessage());
-                                textfield.setTooltip(tooltip);
-                            } catch (UnexpectedErrorException e) {
-                                showError(e.getMessage());
-                            }
-                        }else {
-                            this.mainScreenController.hideNameEdit();
-                        }
-                    }
-                });
-            }
-        });
+        nameLabel.setOnMouseClicked(mouseEvent -> editFileName(mouseEvent, f));
 
         //SIZE
         sizeLabel.setText(f.getFormattedSize());
@@ -382,14 +321,14 @@ public class FilePropertyController implements FileObserver {
             });
 
             MenuItem open = new MenuItem("open in explorer");
-            open.setOnAction(actionEvent -> this.mainScreenController.showFileInExplorer(f.getPath()));
+            open.setOnAction(actionEvent -> FileManager.getInstance().showFileInExplorer(f.getPath()));
             cm.getItems().addAll(open, copy);
             cm.show(pathLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
         });
 
         pathLabel.setOnMouseClicked(mouseEvent -> {
             if(mouseEvent.getClickCount() == 2) {
-                this.mainScreenController.showFileInExplorer(f.getPath());
+                FileManager.getInstance().showFileInExplorer(f.getPath());
             }
         });
 
@@ -434,6 +373,41 @@ public class FilePropertyController implements FileObserver {
         }
     }
 
+    private void editFileName(Event event, DataFile f) {
+        if((event instanceof MouseEvent && ((MouseEvent) event).getClickCount() == 2) || event instanceof ActionEvent) {
+            nameLabel.setVisible(false);
+            TextField textfield = new TextField(nameLabel.getText());
+            textfield.setPrefHeight(nameLabel.getHeight() + 10);
+
+            StackPane nameStackPane = (StackPane) nameLabel.getParent();
+            this.mainScreenController.setNameStackPane(nameStackPane);
+            nameStackPane.getChildren().add(textfield);
+
+            textfield.setOnKeyPressed(event1 -> {
+                if(event1.getCode().toString().equals("ENTER")) {
+                    String newName = textfield.getText();
+                    if(!newName.equals(f.getName())){
+                        try{
+                            f.rename(newName);
+                            nameLabel.setText(newName);
+                            this.mainScreenController.hideNameEdit();
+                        }catch (InvalidFileNameException e){
+                            //Show error
+                            textfield.getStyleClass().add("error-border");
+                            Tooltip tooltip = new Tooltip();
+                            tooltip.setText(e.getMessage());
+                            textfield.setTooltip(tooltip);
+                        } catch (UnexpectedErrorException e) {
+                            showError(e.getMessage());
+                        }
+                    }else {
+                        this.mainScreenController.hideNameEdit();
+                    }
+                }
+            });
+        }
+    }
+
     private void updateTags(DataFile f) {
         this.fileTagsBox.getChildren().clear();
         if(f.isTagsLoaded()){
@@ -461,7 +435,7 @@ public class FilePropertyController implements FileObserver {
         ImageView spinnerIv = new ImageView();
         spinnerIv.setFitHeight(40);
         spinnerIv.setFitWidth(40);
-        String pth = Constants.getResourcePath(getClass(), "images", "spinner2.gif");
+        String pth = FileManager.getResourcePath(getClass(), "images", "spinner2.gif");
         Image spinner = new Image("file:/"+pth);
         spinnerIv.setImage(spinner);
 
@@ -471,7 +445,7 @@ public class FilePropertyController implements FileObserver {
     private void updateTags(DataFile f, boolean set) {
         try {
             this.fileTagsBox.getChildren().clear();
-            String cmd = Constants.getResourcePath(getClass(), "exiftool", "exiftool.exe");
+            String cmd = FileManager.getResourcePath(getClass(), "exiftool", "exiftool.exe");
             cmd += " -S -m -q -fast2 -category ";
             cmd += "\"" + f.getPath() + "\"";
 
@@ -529,6 +503,7 @@ public class FilePropertyController implements FileObserver {
             initializeVideoControl();
 
             mediaPlayer.setOnReady(() -> {
+                this.mediaView.setFitHeight(450);
                 int minDuration = (int) this.mediaPlayer.getTotalDuration().toMinutes();
                 int secDuration = (int) (this.mediaPlayer.getTotalDuration().toSeconds()%60);
                 String minDurationStr, secDurationStr;

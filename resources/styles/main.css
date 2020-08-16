@@ -102,7 +102,6 @@
 .pause-button {
 	-fx-background-color: -fx-dark-grey;
 	-fx-text-fill: white;
-	-fx-font-weight: 9;
 	-fx-text-alignment: center;
 }
 
@@ -144,6 +143,54 @@
 .menu-item:hover {
 	-fx-background-color: -fx-primary-purple;
 }
+
+
+
+
+/***********************************************************
+						TAB PANE
+***********************************************************/
+.tab-pane:top *.tab-header-area {
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-padding: 0.416667em 0.166667em 0.0em 0.0em; /* overridden as 5 2 0 0 */
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-opacity: 0;
+}
+
+/*Removes the blue glowing border at selected tabpane*/
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+}
+
+.tab-pane {
+    -fx-tab-min-width:90px;
+}
+
+.tab{
+    -fx-background-insets: 0 1 0 1,0,0;
+}
+.tab-pane .tab {
+    -fx-background-color: -fx-medium-grey;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color:  -fx-medium-grey;
+}
+
+.tab .tab-label {
+    -fx-alignment: CENTER;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.tab:selected .tab-label {
+    -fx-alignment: CENTER;
+    -fx-text-fill: -fx-primary-purple;
+}
+
 
 
 

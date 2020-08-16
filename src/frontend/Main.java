@@ -1,5 +1,6 @@
 package frontend;
 
+import backend.Constants;
 import backend.FileManager;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -16,7 +17,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception{
         Parent root = FXMLLoader.load(getClass().getResource("/scenes/mainscreen.fxml"));
         primaryStage.setTitle("Smart File Manager");
-        primaryStage.setScene(new Scene(root, 960, 720));
+        primaryStage.setScene(new Scene(root, Constants.DEFAULT_WINDOW_WIDHT, Constants.DEFAULT_WINDOW_HEIGHT));
         primaryStage.show();
 
         primaryStage.setOnCloseRequest(e -> {

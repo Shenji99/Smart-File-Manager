@@ -1,11 +1,11 @@
 package backend;
 
+import backend.data.DataFile;
 import frontend.controllers.FilePropertyController;
 import javafx.scene.image.Image;
 
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -98,6 +98,7 @@ public class FileManager {
         }
         return allFiles;
     }
+
 
     public void addChild(File file) throws IOException {
         DataFile foundFile = findFileByPath(file.getAbsolutePath());

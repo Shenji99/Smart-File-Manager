@@ -1,6 +1,6 @@
 package frontend.controllers;
 
-import backend.DataFile;
+import backend.data.DataFile;
 import backend.FileManager;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -19,8 +19,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.MediaView;
 
-import java.awt.*;
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;

@@ -1,5 +1,7 @@
-package backend;
+package backend.data;
 
+import backend.Constants;
+import backend.FileManager;
 import backend.exceptions.InvalidFileNameException;
 import backend.exceptions.UnexpectedErrorException;
 
@@ -56,8 +58,6 @@ public class DataFile {
         this.changeDate = attr.lastModifiedTime();
         this.path = file.getAbsolutePath();
 
-//        loadFileMetaData();
-
         try {
             loadSubfiles();
         } catch (Exception e) {
@@ -66,41 +66,15 @@ public class DataFile {
 
     }
 
-    private void loadFileMetaData() {
-        try {
-            String path = getClass().getResource("/exiftool").getPath() + "/exiftool.exe";
-            path = path
-                .replace("/", "\\")
-                .substring(1);
-
-            Process p = Runtime.getRuntime().exec(path + " -category \"" + this.path+"\"");
-            p.waitFor();
-            String res = new String(p.getInputStream().readAllBytes());
-            System.out.println(res);
-//            for(String s: res){
-//                System.out.println(s);
-//                String[] vals = s.split(":");
-//                String key = vals[0].strip();
-//                String value = vals[1].strip();
-//                metaData.put(key, value);
-//            }
-            if(getTags() != null){
-                for(String tag: getTags()) {
-                    System.out.println(tag);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    private void refreshTags() {
+        //loads the tags manually, runs exiftool command and updates the UI
     }
 
-
-    private void loadSubfiles() throws IOException {
+    private void loadSubfiles() throws IOException, InterruptedException {
         File[] dir = new File(this.path).listFiles();
         if(dir != null){
             for(File f: dir) {
-                DataFile df = new DataFile(this, f);
-                files.add(df);
+                files.add(new DataFile(this, f));
             }
         }
     }
@@ -209,6 +183,12 @@ public class DataFile {
         this.files.remove(file);
     }
 
+    public void addTag(String tag) {
+        if(!this.tags.contains(tag)) {
+            this.tags.add(tag);
+        }
+    }
+
     //GETTER SETTER
 
     public List<String> getTags() {
@@ -271,13 +251,6 @@ public class DataFile {
         this.parent = parent;
     }
 
-    public void addTag(String tag) {
-//        System.out.println("TAG:"+tag);
-        if(!this.tags.contains(tag)) {
-            this.tags.add(tag);
-        }
-    }
-
     public boolean isTagsLoaded() {
         return tagsLoaded;
     }
@@ -285,6 +258,7 @@ public class DataFile {
     public void setTagsLoaded(boolean tagsLoaded) {
         this.tagsLoaded = tagsLoaded;
     }
+
 }
 
 

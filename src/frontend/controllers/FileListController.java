@@ -1,10 +1,9 @@
 package frontend.controllers;
 
-import backend.DataFile;
+import backend.data.DataFile;
 import backend.FileManager;
 import backend.FileObserver;
 import javafx.event.Event;
-import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -93,28 +92,31 @@ public class FileListController implements FileObserver {
 
     public HBox createListItem(DataFile df) {
         HBox nameWrapper = new HBox();
+        nameWrapper.setMaxWidth(200);
+        nameWrapper.setPrefWidth(200);
         Label name = new Label(df.getName());
-        nameWrapper.setMinWidth(100);
         nameWrapper.getChildren().add(name);
 
         HBox typeWrapper = new HBox();
+        typeWrapper.setMaxWidth(30);
+        typeWrapper.setPrefWidth(30);
         Label type = new Label(df.getType());
-        typeWrapper.setMinWidth(100);
         typeWrapper.getChildren().add(type);
 
         HBox sizeWrapper = new HBox();
+        sizeWrapper.setMaxWidth(40);
+        sizeWrapper.setPrefWidth(40);
         Label size = new Label(df.getFormattedSize());
-        sizeWrapper.setMinWidth(100);
         sizeWrapper.getChildren().add(size);
 
         HBox dateWrapper = new HBox();
-        Label date = new Label(df.getChangeDate().toString());
-        dateWrapper.setMinWidth(100);
+        dateWrapper.setMaxWidth(70);
+        dateWrapper.setPrefWidth(70);
+        Label date = new Label(df.formatDate());
         dateWrapper.getChildren().add(date);
 
         HBox pathWrapper = new HBox();
         Label lpath = new Label(df.getPath());
-        pathWrapper.setMinWidth(100);
         pathWrapper.getChildren().add(lpath);
 
         HBox a = new HBox();
@@ -156,7 +158,6 @@ public class FileListController implements FileObserver {
                 }
             }
         }catch (Exception e){
-            e.printStackTrace();
             //can be ignored
         }
     }

@@ -1,6 +1,6 @@
 package frontend.controllers;
 
-import backend.DataFile;
+import backend.data.DataFile;
 import backend.FileManager;
 import backend.FileObserver;
 import backend.exceptions.InvalidFileNameException;

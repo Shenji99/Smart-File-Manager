@@ -3,12 +3,15 @@ package frontend.controllers;
 import backend.data.DataFile;
 import backend.FileManager;
 import backend.FileObserver;
+import javafx.application.Platform;
 import javafx.event.Event;
+import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,15 +46,12 @@ public class FileListController implements FileObserver {
             boolean success = false;
             if (db.hasFiles()) {
                 try {
-                    fileManager.addChildren(db.getFiles());
-                } catch (IOException e) {
+                    this.mainScreenController.loadFilesInThread(db.getFiles());
+                    success = true;
+                }catch (Exception e){
                     e.printStackTrace();
+                    success = false;
                 }
-                this.mainScreenController.loadThumbnailsInThread();
-                this.mainScreenController.loadResolutionsInThread();
-                this.fileManager.setTags();
-                updateView(fileManager.getAllFiles());
-                success = true;
             }
             /* let the source know whether the string was successfully
              * transferred and used */
@@ -63,6 +63,24 @@ public class FileListController implements FileObserver {
     @Override
     public void onFileUpdate(DataFile dataFile) {
 
+    }
+
+    public void setListViewLoadingSpinner(boolean on) {
+        StackPane stack = (StackPane) this.fileList.getParent();
+        boolean spinnerExists = false;
+        for(Node n: stack.getChildren()) {
+            if(n instanceof ImageView) {
+                if(on){
+                    n.setVisible(true);
+                }else {
+                    n.setVisible(false);
+                }
+                spinnerExists = true;
+            }
+        }
+        if(!spinnerExists){
+            stack.getChildren().add(this.mainScreenController.createLodingSpinner(100, 100));
+        }
     }
 
     public void updateView(List<DataFile> files) {

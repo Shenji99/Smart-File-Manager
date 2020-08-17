@@ -432,7 +432,7 @@ public class FilePropertyController implements FileObserver {
             }
         }else{
             if(spinner == null) {
-                spinner = createLodingSpinner(20,20);
+                spinner = this.mainScreenController.createLodingSpinner(20,20);
                 parent.getChildren().add(spinner);
             }
             spinner.setVisible(true);
@@ -490,21 +490,11 @@ public class FilePropertyController implements FileObserver {
         }else {
             try{
                 this.fileTagsBox.getChildren().clear();
-                this.fileTagsBox.getChildren().add(createLodingSpinner(40,40));
+                this.fileTagsBox.getChildren().add(this.mainScreenController.createLodingSpinner(40,40));
             }catch (Exception e){
                 e.printStackTrace();
             }
         }
-    }
-
-    private ImageView createLodingSpinner(int width, int height) {
-        ImageView spinnerIv = new ImageView();
-        spinnerIv.setFitWidth(width);
-        spinnerIv.setFitHeight(height);
-        String pth = FileManager.getResourcePath(getClass(), "images", "spinner2.gif");
-        Image spinner = new Image("file:/"+pth);
-        spinnerIv.setImage(spinner);
-        return spinnerIv;
     }
 
     private void updateTags(DataFile f, boolean set) {

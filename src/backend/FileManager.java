@@ -21,9 +21,16 @@ public class FileManager {
     private static FileManager instance;
     private final ArrayList<DataFile> files;
 
+    private boolean loadThumbnails;
+    private boolean loadTags;
+    private boolean loadResolutions;
+
     public FileManager() {
         this.files = new ArrayList<>();
         this.observers = new LinkedList<>();
+        this.loadThumbnails = true;
+        this.loadTags = true;
+        this.loadResolutions = true;
     }
 
     public void notifyObservers(DataFile file) {
@@ -122,7 +129,6 @@ public class FileManager {
                 }
             }
         }
-        System.out.println(this.getAllFiles());
     }
 
     /**
@@ -135,6 +141,7 @@ public class FileManager {
      * The threads then process all the files and extract the tags (Category or Subject) and adds them to the files tag field
      */
     public void setTags() {
+        this.loadTags = true;
         List<DataFile> files = getAllFiles();
         List<List<Object>> listArr = getSublists(files, TAG_THREAD_AMOUNT);
 
@@ -158,19 +165,26 @@ public class FileManager {
                     if(addedFile) {
                         StringBuilder runCmd = new StringBuilder(cmd);
                         for(int j = 0; j < filePaths.size(); j++) {
+                            if(!loadTags){
+                                break;
+                            }
                             runCmd.append(filePaths.get(j));
                             //amount files for each command
-                            if((j != 0  && j % EXIF_MAX_FILES_FOR_CMD == 0) || j == filePaths.size()-1) { //MAYBE EDIT THIS VALUE
-//                                System.out.println(runCmd);
+                            if ((j != 0 && j % EXIF_MAX_FILES_FOR_CMD == 0) || j == filePaths.size() - 1) {
+                                //System.out.println(runCmd);
                                 try {
+                                    if (!loadTags) {
+                                        break;
+                                    }
                                     Process p = Runtime.getRuntime().exec(runCmd.toString());
                                     //System.out.println("waiting for ...");
                                     p.waitFor();
                                     String res = new String(p.getInputStream().readAllBytes());
                                     String err = new String(p.getErrorStream().readAllBytes()).trim();
-                                    if(!err.isEmpty()){
+                                    if (!err.isEmpty()) {
                                         System.err.println(err);
                                     }
+                                    //System.out.println("loading tags..");
                                     updateFiles(res);
                                     runCmd = new StringBuilder(cmd);
                                 } catch (Exception e) {
@@ -300,14 +314,20 @@ public class FileManager {
     }
 
     public void loadThumbnailsInThread(FilePropertyController filePropertyController) {
+        this.loadThumbnails = true;
         List<List<Object>> sublists = getSublists(getAllFiles(), THUMBNAIL_THREAD_AMOUNT);
         for(List<Object> list: sublists) {
             Thread t = new Thread(() -> {
                 for(Object o: list) {
-                    try {
-                        filePropertyController.updateThumbnail((DataFile) o, false);
-                    }catch (Exception e) {
-                        e.printStackTrace();
+                    //System.out.println("loading thumbnail..");
+                    if(loadThumbnails){
+                        try {
+                            filePropertyController.updateThumbnail((DataFile) o, false);
+                        }catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }else {
+                        break;
                     }
                 }
             });
@@ -315,24 +335,28 @@ public class FileManager {
         }
     }
 
-    public void loadResoulutionsInThread() {
+    public void loadResolutionsInThread() {
+        this.loadResolutions = true;
         List<List<Object>> sublists = getSublists(getAllFiles(), THUMBNAIL_THREAD_AMOUNT);
         for(List<Object> list: sublists) {
             Thread t = new Thread(() -> {
                 for(Object o: list) {
-                    DataFile df = (DataFile) o;
-                    try {
-                        String res = getResolution(df);
-                        if(!res.isEmpty()){
-                            String[] res2 = res.split("x");
-                            int width = Integer.parseInt(res2[0].trim());
-                            int height = Integer.parseInt(res2[1].trim());
-                            df.setWidth(width);
-                            df.setHeight(height);
-                            notifyObservers(df);
+                    //System.out.println("loading res..");
+                    if(loadResolutions){
+                        DataFile df = (DataFile) o;
+                        try {
+                            String res = getResolution(df);
+                            if(!res.isEmpty()){
+                                String[] res2 = res.split("x");
+                                int width = Integer.parseInt(res2[0].trim());
+                                int height = Integer.parseInt(res2[1].trim());
+                                df.setWidth(width);
+                                df.setHeight(height);
+                                notifyObservers(df);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
                 }
             });
@@ -411,6 +435,12 @@ public class FileManager {
 
     public void addObserver(FileObserver fo){
         this.observers.add(fo);
+    }
+
+    public void stopAllBackgroundThreads(){
+        this.loadTags = false;
+        this.loadThumbnails = false;
+        this.loadResolutions = false;
     }
 
 }

@@ -26,6 +26,7 @@ public class Main extends Application {
 
         primaryStage.setOnCloseRequest(e -> {
             Platform.exit();
+            FileManager.getInstance().stopAllBackgroundThreads();
             FileManager.getInstance().clearThumbnails(FileManager.getResourcePath(getClass(), "thumbnails"));
             System.exit(0);
         });

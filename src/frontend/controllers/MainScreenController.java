@@ -8,6 +8,7 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -88,6 +89,7 @@ public class MainScreenController implements Initializable {
 
     public void clearListClicked(ActionEvent actionEvent) {
         this.fileManager.deleteAllFiles();
+        this.fileManager.stopAllBackgroundThreads();
         this.filePropertyController.clearPanel();
         fileListController.updateView(fileManager.getAllFiles());
     }
@@ -154,6 +156,7 @@ public class MainScreenController implements Initializable {
 
     public void closeApp(ActionEvent actionEvent) {
         Platform.exit();
+        FileManager.getInstance().stopAllBackgroundThreads();
         FileManager.getInstance().clearThumbnails(FileManager.getResourcePath(getClass(), "thumbnails"));
         System.exit(0);
     }
@@ -162,35 +165,72 @@ public class MainScreenController implements Initializable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Dateien auswählen");
         List<File> files = fileChooser.showOpenMultipleDialog(this.stage);
-        if(files != null){
-            try {
-                fileManager.addChildren(files);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            loadThumbnailsInThread();
-            loadResolutionsInThread();
-            this.fileManager.setTags();
-            this.fileListController.updateView(fileManager.getAllFiles());
+
+        this.fileListController.setListViewLoadingSpinner(true);
+
+        if(files != null) {
+            loadFilesInThread(files);
         }
     }
+
 
     public void loadDirectory(ActionEvent actionEvent){
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Ordner auswählen");
         File dir = directoryChooser.showDialog(this.stage);
-        if(dir != null){
+        if(dir != null) {
+            loadFilesInThread(dir);
+        }
+    }
+
+    public void loadFilesInThread(List<File> files) {
+        this.fileListController.setListViewLoadingSpinner(true);
+        Thread t = new Thread(() -> {
             try {
-                fileManager.addChild(dir);
+                fileManager.addChildren(files);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            loadThumbnailsInThread();
-            loadResolutionsInThread();
-            this.fileManager.setTags();
-            this.fileListController.updateView(fileManager.getAllFiles());
-        }
+            Platform.runLater(() -> {
+                this.fileListController.setListViewLoadingSpinner(false);
+                loadThumbnailsInThread();
+                loadResolutionsInThread();
+                this.fileManager.setTags();
+                this.fileListController.updateView(fileManager.getAllFiles());
+                this.fileListController.setListViewLoadingSpinner(false);
+            });
+        });
+        t.start();
+    }
 
+    public void loadFilesInThread(File f) {
+        this.fileListController.setListViewLoadingSpinner(true);
+        Thread t = new Thread(() -> {
+            try {
+                fileManager.addChild(f);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Platform.runLater(() -> {
+                this.fileListController.setListViewLoadingSpinner(false);
+                loadThumbnailsInThread();
+                loadResolutionsInThread();
+                this.fileManager.setTags();
+                this.fileListController.updateView(fileManager.getAllFiles());
+                this.fileListController.setListViewLoadingSpinner(false);
+            });
+        });
+        t.start();
+    }
+
+    public ImageView createLodingSpinner(int width, int height) {
+        ImageView spinnerIv = new ImageView();
+        spinnerIv.setFitWidth(width);
+        spinnerIv.setFitHeight(height);
+        String pth = FileManager.getResourcePath(getClass(), "images", "spinner2.gif");
+        Image spinner = new Image("file:/"+pth);
+        spinnerIv.setImage(spinner);
+        return spinnerIv;
     }
 
 
@@ -320,7 +360,7 @@ public class MainScreenController implements Initializable {
     }
 
     public void loadResolutionsInThread() {
-        this.fileManager.loadResoulutionsInThread();
+        this.fileManager.loadResolutionsInThread();
     }
 
 

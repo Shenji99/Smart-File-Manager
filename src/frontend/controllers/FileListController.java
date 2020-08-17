@@ -4,10 +4,7 @@ import backend.data.DataFile;
 import backend.FileManager;
 import backend.FileObserver;
 import javafx.event.Event;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.HBox;
 
@@ -29,6 +26,7 @@ public class FileListController implements FileObserver {
         this.mainScreenController = mainScreenController;
 
         this.fileList = this.mainScreenController.getFileList();
+        this.fileList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         this.fileManager = this.mainScreenController.getFileManager();
 
         this.filesAmountLabel = mainScreenController.getFilesAmountLabel();
@@ -44,13 +42,10 @@ public class FileListController implements FileObserver {
             Dragboard db = event.getDragboard();
             boolean success = false;
             if (db.hasFiles()) {
-                List<File> files = db.getFiles();
-                for(File f: files) {
-                    try {
-                        fileManager.addChild(f);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                try {
+                    fileManager.addChildren(db.getFiles());
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
                 this.mainScreenController.loadThumbnailsInThread();
                 this.mainScreenController.loadResolutionsInThread();
@@ -120,28 +115,21 @@ public class FileListController implements FileObserver {
         Label lpath = new Label(df.getPath());
         pathWrapper.getChildren().add(lpath);
 
-        HBox a = new HBox();
-        a.setSpacing(10);
+        HBox wrapper = new HBox();
+        wrapper.setSpacing(10);
 
-        a.setOnContextMenuRequested(contextMenuEvent -> {
-            ContextMenu cm = new ContextMenu();
-            MenuItem open = new MenuItem("Datei öffnen");
-            open.setOnAction(actionEvent -> {
-                FileManager.getInstance().openFile(df.getPath());
-            });
+        //CONTEXT MENU FOR LIST ITEM
+        ContextMenu cm = new ContextMenu();
+        MenuItem open = new MenuItem("Datei öffnen");
+        MenuItem openInExplorer = new MenuItem("In Explorer zeigen");
+        open.setOnAction(actionEvent -> FileManager.getInstance().openFile(df.getPath()));
+        openInExplorer.setOnAction(actionEvent -> FileManager.getInstance().showFileInExplorer(df.getPath()));
+        cm.getItems().addAll(open, openInExplorer);
 
-            MenuItem openInExplorer = new MenuItem("In Explorer zeigen");
-            openInExplorer.setOnAction(actionEvent -> {
-                FileManager.getInstance().showFileInExplorer(df.getPath());
-            });
+        wrapper.setOnContextMenuRequested(contextMenuEvent -> cm.show(wrapper, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY()));
 
-
-            cm.getItems().addAll(open, openInExplorer);
-            cm.show(a, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
-        });
-
-        a.getChildren().addAll(nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
-        return a;
+        wrapper.getChildren().addAll(nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
+        return wrapper;
     }
 
     public void listViewItemClicked(Event event) {

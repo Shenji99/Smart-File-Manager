@@ -77,7 +77,9 @@ public class DataFile {
         File[] dir = new File(this.path).listFiles();
         if(dir != null){
             for(File f: dir) {
-                files.add(new DataFile(this, f));
+                if(FileManager.getInstance().findFileByPath(f.getAbsolutePath()) == null){
+                    files.add(new DataFile(this, f));
+                }
             }
         }
     }

@@ -287,93 +287,12 @@ public class FilePropertyController implements FileObserver {
     }
 
     public void updateFileProperties(DataFile f, boolean updateThumbnail) throws InterruptedException, IOException {
-        //NAME
-        nameLabel.setText(f.getName());
-        nameLabel.setOnContextMenuRequested(contextMenuEvent -> {
-            ContextMenu cm = new ContextMenu();
-            MenuItem copy = new MenuItem("copy");
-            copy.setOnAction(actionEvent -> {
-                ClipboardContent content = new ClipboardContent();
-                content.putString(f.getName());
-                Clipboard.getSystemClipboard().setContent(content);
-            });
 
-            MenuItem edit = new MenuItem("Edit");
-            edit.setOnAction(actionEvent -> editFileName(actionEvent, f));
-
-            cm.getItems().addAll(copy, edit);
-            cm.show(nameLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
-        });
-
-        nameLabel.setOnMouseClicked(mouseEvent -> editFileName(mouseEvent, f));
-
-        //SIZE
-        sizeLabel.setText(f.getFormattedSize());
-        sizeLabel.setOnContextMenuRequested(contextMenuEvent -> {
-            ContextMenu cm = new ContextMenu();
-            MenuItem copy = new MenuItem("copy");
-            copy.setOnAction(actionEvent -> {
-                ClipboardContent content = new ClipboardContent();
-                content.putString(Long.toString(f.getSize()));
-                Clipboard.getSystemClipboard().setContent(content);
-            });
-            cm.getItems().add(copy);
-            cm.show(sizeLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
-        });
-
-        //path
-        Tooltip tooltip = new Tooltip();
-        tooltip.setText(f.getPath());
-        pathLabel.setTooltip(tooltip);
-        pathLabel.setText(f.getPath());
-        pathLabel.setOnContextMenuRequested(contextMenuEvent -> {
-            ContextMenu cm = new ContextMenu();
-            MenuItem copy = new MenuItem("copy");
-            copy.setOnAction(actionEvent -> {
-                ClipboardContent content = new ClipboardContent();
-                content.putString(f.getPath());
-                Clipboard.getSystemClipboard().setContent(content);
-            });
-
-            MenuItem open = new MenuItem("open in explorer");
-            open.setOnAction(actionEvent -> FileManager.getInstance().showFileInExplorer(f.getPath()));
-            cm.getItems().addAll(open, copy);
-            cm.show(pathLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
-        });
-
-        pathLabel.setOnMouseClicked(mouseEvent -> {
-            if(mouseEvent.getClickCount() == 2) {
-                FileManager.getInstance().showFileInExplorer(f.getPath());
-            }
-        });
-
-
-        //type
-        typeLabel.setText(f.getType());
-        typeLabel.setOnContextMenuRequested(contextMenuEvent -> {
-            ContextMenu cm = new ContextMenu();
-            MenuItem copy = new MenuItem("copy");
-            copy.setOnAction(actionEvent -> {
-                ClipboardContent content = new ClipboardContent();
-                content.putString(f.getType());
-                Clipboard.getSystemClipboard().setContent(content);
-            });
-            cm.getItems().add(copy);
-            cm.show(typeLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
-        });
-
-        changeDateLabel.setText(f.formatDate());
-        changeDateLabel.setOnContextMenuRequested(contextMenuEvent -> {
-            ContextMenu cm = new ContextMenu();
-            MenuItem copy = new MenuItem("copy");
-            copy.setOnAction(actionEvent -> {
-                ClipboardContent content = new ClipboardContent();
-                content.putString(f.getChangeDate().toString());
-                Clipboard.getSystemClipboard().setContent(content);
-            });
-            cm.getItems().add(copy);
-            cm.show(changeDateLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
-        });
+        updateNameValueLabel(f);
+        updateSizeValueLabel(f);
+        updatePathValueLabel(f);
+        updateTypeValueLabel(f);
+        updateChangeDateValueLabel(f);
 
         boolean hasWidthHeight = false;
 
@@ -407,6 +326,89 @@ public class FilePropertyController implements FileObserver {
         if(updateThumbnail) {
             this.updateThumbnail(f, true);
         }
+    }
+
+    private void updateChangeDateValueLabel(DataFile f) {
+        changeDateLabel.setText(f.formatDate());
+        ContextMenu cm = new ContextMenu();
+        MenuItem copy = new MenuItem("copy");
+        copy.setOnAction(actionEvent -> {
+            ClipboardContent content = new ClipboardContent();
+            content.putString(f.getChangeDate().toString());
+            Clipboard.getSystemClipboard().setContent(content);
+        });
+        cm.getItems().add(copy);
+        changeDateLabel.setOnContextMenuRequested(contextMenuEvent -> cm.show(changeDateLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY()));
+    }
+
+    private void updateTypeValueLabel(DataFile f) {
+        typeLabel.setText(f.getType());
+        ContextMenu cm = new ContextMenu();
+        MenuItem copy = new MenuItem("copy");
+        copy.setOnAction(actionEvent -> {
+            ClipboardContent content = new ClipboardContent();
+            content.putString(f.getType());
+            Clipboard.getSystemClipboard().setContent(content);
+        });
+        cm.getItems().add(copy);
+        typeLabel.setOnContextMenuRequested(contextMenuEvent -> cm.show(typeLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY()));
+    }
+
+    private void updatePathValueLabel(DataFile f) {
+        Tooltip tooltip = new Tooltip();
+        tooltip.setText(f.getPath());
+        pathLabel.setTooltip(tooltip);
+        pathLabel.setText(f.getPath());
+
+        ContextMenu cm = new ContextMenu();
+        MenuItem copy = new MenuItem("copy");
+        copy.setOnAction(actionEvent -> {
+            ClipboardContent content = new ClipboardContent();
+            content.putString(f.getPath());
+            Clipboard.getSystemClipboard().setContent(content);
+        });
+
+        MenuItem open = new MenuItem("open in explorer");
+        open.setOnAction(actionEvent -> FileManager.getInstance().showFileInExplorer(f.getPath()));
+        cm.getItems().addAll(open, copy);
+        pathLabel.setOnContextMenuRequested(contextMenuEvent -> cm.show(pathLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY()));
+
+        pathLabel.setOnMouseClicked(mouseEvent -> {
+            if(mouseEvent.getClickCount() == 2) {
+                FileManager.getInstance().showFileInExplorer(f.getPath());
+            }
+        });
+    }
+
+    private void updateSizeValueLabel(DataFile f) {
+        sizeLabel.setText(f.getFormattedSize());
+        ContextMenu cm = new ContextMenu();
+        MenuItem copy = new MenuItem("copy");
+        copy.setOnAction(actionEvent -> {
+            ClipboardContent content = new ClipboardContent();
+            content.putString(Long.toString(f.getSize()));
+            Clipboard.getSystemClipboard().setContent(content);
+        });
+        cm.getItems().add(copy);
+        sizeLabel.setOnContextMenuRequested(contextMenuEvent -> cm.show(sizeLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY()));
+    }
+
+    private void updateNameValueLabel(DataFile f) {
+        nameLabel.setText(f.getName());
+        ContextMenu cm = new ContextMenu();
+        MenuItem copy = new MenuItem("copy");
+        copy.setOnAction(actionEvent -> {
+            ClipboardContent content = new ClipboardContent();
+            content.putString(f.getName());
+            Clipboard.getSystemClipboard().setContent(content);
+        });
+
+        MenuItem edit = new MenuItem("Edit");
+        edit.setOnAction(actionEvent -> editFileName(actionEvent, f));
+
+        cm.getItems().addAll(copy, edit);
+        nameLabel.setOnContextMenuRequested(contextMenuEvent -> cm.show(nameLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY()));
+        nameLabel.setOnMouseClicked(mouseEvent -> editFileName(mouseEvent, f));
     }
 
     private void updateWidthHeightLabel(DataFile f) {

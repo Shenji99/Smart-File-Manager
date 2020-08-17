@@ -101,6 +101,12 @@ public class FileManager {
         return allFiles;
     }
 
+    public void addChildren(List<File> files) throws IOException {
+        for(File f: files) {
+            this.addChild(f);
+        }
+    }
+
 
     public void addChild(File file) throws IOException {
         DataFile foundFile = findFileByPath(file.getAbsolutePath());
@@ -116,6 +122,7 @@ public class FileManager {
                 }
             }
         }
+        System.out.println(this.getAllFiles());
     }
 
     /**
@@ -330,7 +337,6 @@ public class FileManager {
                 }
             });
             t.start();
-            System.out.println("started res");
         }
     }
 
@@ -406,4 +412,5 @@ public class FileManager {
     public void addObserver(FileObserver fo){
         this.observers.add(fo);
     }
+
 }

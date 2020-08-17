@@ -2,6 +2,7 @@ package frontend.controllers;
 
 import backend.FileManager;
 import backend.data.DataFile;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -14,9 +15,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.MediaView;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +60,7 @@ public class MainScreenController implements Initializable {
 
     private FileListController fileListController;
     private FilePropertyController filePropertyController;
+    private Stage stage;
 
 
     @Override
@@ -78,7 +83,6 @@ public class MainScreenController implements Initializable {
         if(event.getTarget() != this.filePropertyController.getNameLabel()){
             filePropertyController.hideNameEdit();
         }
-//        this.fileListController.listViewItemClicked(event);
     }
 
 
@@ -92,8 +96,8 @@ public class MainScreenController implements Initializable {
     public void listViewItemClicked(Event event) {
         if(event.getTarget() != this.filePropertyController.getNameLabel()) {
             filePropertyController.hideNameEdit();
+            this.fileListController.listViewItemClicked(event);
         }
-        this.fileListController.listViewItemClicked(event);
     }
 
 
@@ -129,11 +133,10 @@ public class MainScreenController implements Initializable {
         }
     }
 
-    public void updateFileProperties(Event event, DataFile file) throws IOException, InterruptedException, URISyntaxException {
+    public void updateFileProperties(Event event, DataFile file) throws IOException, InterruptedException {
         this.filePropertyController.updateFileProperties(event, file);
         this.filePropertyController.unhidePanel();
     }
-
 
     public void searchFiles(KeyEvent keyEvent) {
         TextField src = (TextField) keyEvent.getSource();
@@ -148,6 +151,49 @@ public class MainScreenController implements Initializable {
     public void loadThumbnailsInThread() {
         this.fileManager.loadThumbnailsInThread(this.filePropertyController);
     }
+
+    public void closeApp(ActionEvent actionEvent) {
+        Platform.exit();
+        FileManager.getInstance().clearThumbnails(FileManager.getResourcePath(getClass(), "thumbnails"));
+        System.exit(0);
+    }
+
+    public void loadFiles(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Dateien auswählen");
+        List<File> files = fileChooser.showOpenMultipleDialog(this.stage);
+        if(files != null){
+            try {
+                fileManager.addChildren(files);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            loadThumbnailsInThread();
+            loadResolutionsInThread();
+            this.fileManager.setTags();
+            this.fileListController.updateView(fileManager.getAllFiles());
+        }
+    }
+
+    public void loadDirectory(ActionEvent actionEvent){
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Ordner auswählen");
+        File dir = directoryChooser.showDialog(this.stage);
+        if(dir != null){
+            try {
+                fileManager.addChild(dir);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            loadThumbnailsInThread();
+            loadResolutionsInThread();
+            this.fileManager.setTags();
+            this.fileListController.updateView(fileManager.getAllFiles());
+        }
+
+    }
+
+
 
     public ListView getFileList() {
         return fileList;
@@ -273,9 +319,12 @@ public class MainScreenController implements Initializable {
         return this.widthHeightLabelValue;
     }
 
-
     public void loadResolutionsInThread() {
         this.fileManager.loadResoulutionsInThread();
     }
 
+
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
 }

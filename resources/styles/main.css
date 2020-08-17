@@ -130,6 +130,15 @@
     -fx-background-radius: 3;
 }
 
+
+/***********************************************************
+						MENU
+***********************************************************/
+
+.menu-bar {
+    -fx-background-color: -fx-dark-grey ;
+}
+
 .menu, .menu-item, .context-menu {
     -fx-background-color: -fx-dark-grey;
 }

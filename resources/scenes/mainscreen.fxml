@@ -285,12 +285,14 @@
    <top>
       <MenuBar BorderPane.alignment="CENTER">
         <menus>
-          <Menu mnemonicParsing="false" text="File">
+          <Menu mnemonicParsing="false" text="Datei">
             <items>
-              <MenuItem mnemonicParsing="false" text="Close" />
+              <MenuItem mnemonicParsing="false" onAction="#loadFiles" text="Dateien öffnen" />
+                  <MenuItem mnemonicParsing="false" onAction="#loadDirectory" text="Ordner öffnen" />
+                  <MenuItem mnemonicParsing="false" onAction="#closeApp" text="Close" />
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" text="Edit">
+          <Menu mnemonicParsing="false" text="Optionen">
             <items>
               <MenuItem mnemonicParsing="false" text="Delete" />
             </items>

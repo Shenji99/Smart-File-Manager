@@ -1,19 +1,15 @@
 package frontend.controllers;
 
-import backend.data.DataFile;
 import backend.FileManager;
+import backend.data.DataFile;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -28,7 +24,6 @@ import java.util.ResourceBundle;
 
 public class MainScreenController implements Initializable {
 
-    @FXML private SplitPane content;
     @FXML private ListView fileList;
     @FXML private ImageView thumbnail;
     @FXML private ImageView playIcon;
@@ -72,10 +67,6 @@ public class MainScreenController implements Initializable {
         this.fileManager.addObserver(this.fileListController);
         this.fileManager.addObserver(this.filePropertyController);
 
-        AnchorPane.setLeftAnchor(content, 0.0);
-        AnchorPane.setRightAnchor(content, 0.0);
-        AnchorPane.setTopAnchor(content, 0.0);
-        AnchorPane.setBottomAnchor(content, 0.0);
     }
 
     public ImageView getPlayIcon() {
@@ -164,14 +155,6 @@ public class MainScreenController implements Initializable {
 
     public void setFileList(ListView fileList) {
         this.fileList = fileList;
-    }
-
-    public SplitPane getContent() {
-        return content;
-    }
-
-    public void setContent(SplitPane content) {
-        this.content = content;
     }
 
     public ImageView getThumbnail() {

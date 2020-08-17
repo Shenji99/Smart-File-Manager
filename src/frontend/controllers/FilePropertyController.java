@@ -101,8 +101,6 @@ public class FilePropertyController implements FileObserver {
         clearPanel();
         hideMediaPlayerVideo();
 
-        this.mediaView.setFitHeight(0);
-
         this.playIcon.setVisible(false);
 
         String path = FileManager.getResourcePath(getClass(), "images", "playIcon.png");
@@ -289,7 +287,6 @@ public class FilePropertyController implements FileObserver {
     }
 
     public void updateFileProperties(DataFile f, boolean updateThumbnail) throws InterruptedException, IOException {
-        this.mediaView.setFitHeight(0);
         //NAME
         nameLabel.setText(f.getName());
         nameLabel.setOnContextMenuRequested(contextMenuEvent -> {
@@ -557,19 +554,18 @@ public class FilePropertyController implements FileObserver {
             if(this.videoSlider != null){
                 this.videoSlider.setValue(0);
             }
-            File f = new File(pathLabel.getText());
-            Media media = new Media(f.toURI().toString());
+            Media media = new Media(new File(pathLabel.getText()).toURI().toString());
             mediaPlayer = new MediaPlayer(media);
             this.mediaView.setMediaPlayer(mediaPlayer);
             mediaPlayer.play();
             this.playButton.setText("||");
             this.playIcon.setVisible(false);
+
             setMediaControlVisibility(true);
 
             initializeVideoControl();
 
             mediaPlayer.setOnReady(() -> {
-                this.mediaView.setFitHeight(450);
                 int minDuration = (int) this.mediaPlayer.getTotalDuration().toMinutes();
                 int secDuration = (int) (this.mediaPlayer.getTotalDuration().toSeconds()%60);
                 String minDurationStr, secDurationStr;
@@ -615,6 +611,16 @@ public class FilePropertyController implements FileObserver {
     }
 
     private void setMediaControlVisibility(boolean b) {
+        //resetting the size is important so that the container resizes
+        // when the new video/image is bigger or smaller
+        if(b) {
+            this.mediaView.setFitWidth(400);
+            this.mediaView.setFitHeight(300);
+        }else {
+            //cant be 0 otherwise it is buggy
+            this.mediaView.setFitWidth(10);
+            this.mediaView.setFitHeight(10);
+        }
         this.mediaView.setVisible(b);
         this.videoSlider.setVisible(b);
         this.volumeSlider.setVisible(b);
@@ -624,14 +630,6 @@ public class FilePropertyController implements FileObserver {
 
     public Label getNameLabel() {
         return this.nameLabel;
-    }
-
-    public void setNameLabel(Label nameLabel) {
-        this.nameLabel = nameLabel;
-    }
-
-    public StackPane getNameStackPane() {
-        return nameStackPane;
     }
 
     public void setNameStackPane(StackPane nameStackPane) {

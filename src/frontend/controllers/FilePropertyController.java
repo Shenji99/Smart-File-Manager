@@ -306,6 +306,7 @@ public class FilePropertyController implements FileObserver {
             case "tiff" :
             case "bmp"  :
                 hasWidthHeight = true;
+                this.playIcon.setVisible(false);
                 break;
             case "mp4"  :
                 hasWidthHeight = true;
@@ -411,31 +412,17 @@ public class FilePropertyController implements FileObserver {
         nameLabel.setOnMouseClicked(mouseEvent -> editFileName(mouseEvent, f));
     }
 
-    private void updateWidthHeightLabel(DataFile f) {
-        this.widthHeightLabel.setVisible(true);
-        this.widthHeightLabelValue.setVisible(true);
-
-        StackPane parent = (StackPane) this.widthHeightLabelValue.getParent();
-        this.widthHeightLabelValue.setText("");
-        //hide the loading spinner
-        Node spinner = null;
-        for(Node n: parent.getChildren()){
-            if(n instanceof ImageView) {
-                spinner = n;
-                break;
-            }
-        }
-        if(f.getWidth() != 0 && f.getHeight() != 0) {
-            this.widthHeightLabelValue.setText(f.getWidth()+"/"+f.getHeight());
-            if(spinner != null){
-                spinner.setVisible(false);
-            }
-        }else{
-            if(spinner == null) {
-                spinner = this.mainScreenController.createLodingSpinner(20,20);
-                parent.getChildren().add(spinner);
-            }
-            spinner.setVisible(true);
+    private void updateWidthHeightLabel(DataFile f) throws IOException, InterruptedException {
+        String res = FileManager.getResolution(f);
+        if(!res.isEmpty()){
+            this.widthHeightLabel.setVisible(true);
+            this.widthHeightLabelValue.setVisible(true);
+            String[] res2 = res.split("x");
+            int width = Integer.parseInt(res2[0].trim());
+            int height = Integer.parseInt(res2[1].trim());
+            f.setWidth(width);
+            f.setHeight(height);
+            this.widthHeightLabelValue.setText(res);
         }
     }
 
@@ -488,47 +475,61 @@ public class FilePropertyController implements FileObserver {
                 this.fileTagsBox.getChildren().add(l);
             }
         }else {
+            new Thread(() -> {
+                try{
+                    String cmd = FileManager.getResourcePath(getClass(), "exiftool", "exiftool.exe");
+                        cmd += " -L -S -m -q -fast2 -fileName -directory -category -XMP:Subject ";
+                        cmd += "\"" + f.getPath() +"\"";
+                    Process p = Runtime.getRuntime().exec(cmd);
+                    p.waitFor();
+                    String res = new String(p.getInputStream().readAllBytes());
+                    FileManager.getInstance().updateFiles(res);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }).start();
+
             try{
                 this.fileTagsBox.getChildren().clear();
                 this.fileTagsBox.getChildren().add(this.mainScreenController.createLodingSpinner(40,40));
-            }catch (Exception e){
+            }catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private void updateTags(DataFile f, boolean set) {
-        try {
-            this.fileTagsBox.getChildren().clear();
-            String cmd = FileManager.getResourcePath(getClass(), "exiftool", "exiftool.exe");
-            cmd += " -S -m -q -fast2 -category ";
-            cmd += "\"" + f.getPath() + "\"";
-
-            Process p = Runtime.getRuntime().exec(cmd);
-            p.waitFor();
-            String res = new String(p.getInputStream().readAllBytes());
-            System.err.println(new String(p.getErrorStream().readAllBytes()));
-//            System.out.println(res);
-            if(!res.isEmpty()) {
-                String[] tags = res.split(":")[1].split(",");
-                for(String tag: tags) {
-                    tag = tag.strip();
-                    f.addTag(tag);
-                    if(set) {
-                        StackPane stack = new StackPane();
-                        Label l = new Label(tag);
-                        l.setAlignment(Pos.CENTER);
-                        l.getStyleClass().add("tag");
-
-                        stack.getChildren().add(l);
-                        this.fileTagsBox.getChildren().add(l);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    private void updateTags(DataFile f, boolean set) {
+//        try {
+//            this.fileTagsBox.getChildren().clear();
+//            String cmd = FileManager.getResourcePath(getClass(), "exiftool", "exiftool.exe");
+//            cmd += " -S -m -q -fast2 -category ";
+//            cmd += "\"" + f.getPath() + "\"";
+//
+//            Process p = Runtime.getRuntime().exec(cmd);
+//            p.waitFor();
+//            String res = new String(p.getInputStream().readAllBytes());
+//            System.err.println(new String(p.getErrorStream().readAllBytes()));
+////            System.out.println(res);
+//            if(!res.isEmpty()) {
+//                String[] tags = res.split(":")[1].split(",");
+//                for(String tag: tags) {
+//                    tag = tag.strip();
+//                    f.addTag(tag);
+//                    if(set) {
+//                        StackPane stack = new StackPane();
+//                        Label l = new Label(tag);
+//                        l.setAlignment(Pos.CENTER);
+//                        l.getStyleClass().add("tag");
+//
+//                        stack.getChildren().add(l);
+//                        this.fileTagsBox.getChildren().add(l);
+//                    }
+//                }
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);

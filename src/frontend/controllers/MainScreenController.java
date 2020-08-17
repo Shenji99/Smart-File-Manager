@@ -367,4 +367,7 @@ public class MainScreenController implements Initializable {
     public void setStage(Stage stage) {
         this.stage = stage;
     }
+
+    public void showGeneralOptions(ActionEvent actionEvent) {
+    }
 }

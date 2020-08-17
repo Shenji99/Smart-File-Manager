@@ -182,11 +182,7 @@
                                  </padding>
                               </Label>
                               <Label fx:id="widthHeightLabel" maxWidth="Infinity" styleClass="file-property" text="Breite/Höhe:" GridPane.rowIndex="3" />
-                              <StackPane alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="3">
-                                 <children>
-                                    <Label fx:id="widthHeightLabelValue" styleClass="file-property-value" />
-                                 </children>
-                              </StackPane>
+                              <Label fx:id="widthHeightLabelValue" styleClass="file-property-value" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                            </children>
                         </GridPane>
                         <GridPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity">
@@ -298,7 +294,7 @@
           </Menu>
           <Menu mnemonicParsing="false" text="Optionen">
             <items>
-              <MenuItem mnemonicParsing="false" text="Delete" />
+              <MenuItem mnemonicParsing="false" onAction="#showGeneralOptions" text="Allgemein" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Help">

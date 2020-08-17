@@ -148,7 +148,7 @@ public class FileManager {
         for(int i = 0; i < listArr.size(); i++) {
             List li = listArr.get(i);
             if(li.size() > 0) {
-                Thread t = new Thread(() -> {
+                new Thread(() -> {
                     String cmd = getResourcePath(getClass(), "exiftool", "exiftool.exe");
                     cmd += " -L -S -m -q -fast2 -fileName -directory -category -XMP:Subject ";
 
@@ -193,8 +193,7 @@ public class FileManager {
                             }
                         }
                     }
-                });
-                t.start();
+                }).start();
             }
         }
     }
@@ -217,7 +216,7 @@ public class FileManager {
      *
      * @param res the string from exiftool
      */
-    private void updateFiles(String res) {
+    public void updateFiles(String res) {
         res = res.trim();
         String[] lines = res.split("\n");
 
@@ -317,7 +316,7 @@ public class FileManager {
         this.loadThumbnails = true;
         List<List<Object>> sublists = getSublists(getAllFiles(), THUMBNAIL_THREAD_AMOUNT);
         for(List<Object> list: sublists) {
-            Thread t = new Thread(() -> {
+            new Thread(() -> {
                 for(Object o: list) {
                     //System.out.println("loading thumbnail..");
                     if(loadThumbnails){
@@ -330,8 +329,7 @@ public class FileManager {
                         break;
                     }
                 }
-            });
-            t.start();
+            }).start();
         }
     }
 
@@ -339,7 +337,7 @@ public class FileManager {
         this.loadResolutions = true;
         List<List<Object>> sublists = getSublists(getAllFiles(), THUMBNAIL_THREAD_AMOUNT);
         for(List<Object> list: sublists) {
-            Thread t = new Thread(() -> {
+            new Thread(() -> {
                 for(Object o: list) {
                     //System.out.println("loading res..");
                     if(loadResolutions){
@@ -359,8 +357,7 @@ public class FileManager {
                         }
                     }
                 }
-            });
-            t.start();
+            }).start();
         }
     }
 

@@ -98,17 +98,17 @@
                                           </Button>
                                           <HBox alignment="CENTER">
                                              <children>
-                                                <Label fx:id="currentTime" minWidth="30.0" text="00:00" >
+                                                <Label fx:id="currentTime" minWidth="30.0" text="00:00">
                                                    <font>
                                                       <Font size="9.0" />
                                                    </font>
                                                 </Label>
-                                                <Label maxWidth="6.0" minWidth="6.0" prefHeight="17.0" prefWidth="6.0" text="/" >
+                                                <Label maxWidth="6.0" minWidth="6.0" prefHeight="17.0" prefWidth="6.0" text="/">
                                                    <font>
                                                       <Font size="9.0" />
                                                    </font>
                                                 </Label>
-                                                <Label fx:id="videoDuration" maxWidth="1.7976931348623157E308" minWidth="30.0" text="00:00" >
+                                                <Label fx:id="videoDuration" maxWidth="1.7976931348623157E308" minWidth="30.0" text="00:00">
                                                    <font>
                                                       <Font size="9.0" />
                                                    </font>
@@ -143,13 +143,14 @@
                      <items>
                         <GridPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity">
                           <columnConstraints>
-                            <ColumnConstraints hgrow="ALWAYS" maxWidth="50" />
-                            <ColumnConstraints hgrow="ALWAYS" prefWidth="100" />
+                            <ColumnConstraints hgrow="ALWAYS" maxWidth="91.0" minWidth="55.0" prefWidth="89.0" />
+                            <ColumnConstraints hgrow="ALWAYS" maxWidth="188.0" minWidth="152.0" prefWidth="154.0" />
                           </columnConstraints>
                           <rowConstraints>
                             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="ALWAYS" />
                             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="ALWAYS" />
                             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="ALWAYS" />
+                              <RowConstraints prefHeight="30.0" vgrow="ALWAYS" />
                           </rowConstraints>
                            <children>
                               <Label maxWidth="Infinity" styleClass="file-property" text="Name:" />
@@ -174,6 +175,12 @@
                                     <Insets left="20.0" />
                                  </padding>
                               </Label>
+                              <Label fx:id="widthHeightLabel" maxWidth="Infinity" styleClass="file-property" text="Breite/Höhe:" GridPane.rowIndex="3" />
+                              <StackPane alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                                 <children>
+                                    <Label fx:id="widthHeightLabelValue" styleClass="file-property-value" />
+                                 </children>
+                              </StackPane>
                            </children>
                         </GridPane>
                         <GridPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity">

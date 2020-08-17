@@ -5,14 +5,16 @@ import frontend.controllers.FilePropertyController;
 import javafx.scene.image.Image;
 
 import java.awt.*;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 public class FileManager {
 
-    private static final int TAG_THREAD_AMOUNT = 15;
+    private static final int THUMBNAIL_THREAD_AMOUNT = 7;
+    private static final int TAG_THREAD_AMOUNT = 7;
     private static final int EXIF_MAX_FILES_FOR_CMD = 20;
 
     private final LinkedList<FileObserver> observers;
@@ -196,28 +198,16 @@ public class FileManager {
      */
     private void updateFiles(String res) {
         res = res.trim();
-//        System.out.println("\n\n\n A ============ ");
-//        System.out.println(res);
-//        System.out.println(" B ============ ");
         String[] lines = res.split("\n");
-//        int n = 0;
-//        if(lines.length > 2){
-//            n = 2;
-//        }
+
         for(int i = 0; i < lines.length; i+=2) {
-//            System.out.print("i:"+i+"  n:"+n + "   lines.length:"+lines.length + "    lines.length-n:"+(lines.length-n)+"   ");
             String name = lines[i].split(": ")[1].strip();
-//            System.out.println(name);
-//            System.out.print("i+1:"+(i+1)+"  n:"+n + "   lines.length:"+lines.length + "    lines.length-n:"+(lines.length-n)+"   ");
             String dir = lines[i+1].split(": ")[1].strip();
-//            System.out.println(dir);
             String path = (dir+"/"+name).replace("/", "\\");
             DataFile file = findFileByPath(path);
             //category for videos, subject for images
             if(i+2 <= lines.length-1){
                 if(lines[i+2] != null && (lines[i+2].startsWith("Category") || lines[i+2].startsWith("Subject"))) {
-//                    System.out.print("i+2:"+(i+2)+"  n:"+n + "   lines.length:"+lines.length + "    lines.length-n:"+(lines.length-n)+"   ");
-//                    System.out.println(lines[i+2]);
                     String[] categories = lines[i+2].split(":")[1].strip().split(", ");
                     if(file != null){
                         file.getTags().clear();
@@ -256,16 +246,6 @@ public class FileManager {
                 n = 0;
             }
         }
-
-//        for(List l: all) {
-//            System.out.print(l.size()+"[");
-//            for(Object df: l){
-//                System.out.print(((DataFile)df).getName() +", ");
-//            }
-//            System.out.print("]");
-//            System.out.println();
-//        }
-
         return all;
     }
 
@@ -313,19 +293,53 @@ public class FileManager {
     }
 
     public void loadThumbnailsInThread(FilePropertyController filePropertyController) {
-        Thread t = new Thread(() -> {
-            if(getRootFiles() != null) {
-                List<DataFile> files = getAllFiles();
-                for(DataFile df: files) {
+        List<List<Object>> sublists = getSublists(getAllFiles(), THUMBNAIL_THREAD_AMOUNT);
+        for(List<Object> list: sublists) {
+            Thread t = new Thread(() -> {
+                for(Object o: list) {
                     try {
-                        filePropertyController.updateThumbnail(df, false);
+                        filePropertyController.updateThumbnail((DataFile) o, false);
                     }catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
-            }
-        });
-        t.start();
+            });
+            t.start();
+        }
+    }
+
+    public void loadResoulutionsInThread() {
+        List<List<Object>> sublists = getSublists(getAllFiles(), THUMBNAIL_THREAD_AMOUNT);
+        for(List<Object> list: sublists) {
+            Thread t = new Thread(() -> {
+                for(Object o: list) {
+                    DataFile df = (DataFile) o;
+                    try {
+                        String res = getResolution(df);
+                        if(!res.isEmpty()){
+                            String[] res2 = res.split("x");
+                            int width = Integer.parseInt(res2[0].trim());
+                            int height = Integer.parseInt(res2[1].trim());
+                            df.setWidth(width);
+                            df.setHeight(height);
+                            notifyObservers(df);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            t.start();
+            System.out.println("started res");
+        }
+    }
+
+    public static String getResolution(DataFile df) throws IOException, InterruptedException {
+        String cmd = "ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 ";
+        cmd += "\""+df.getPath()+"\"";
+        Process p = Runtime.getRuntime().exec(cmd);
+        p.waitFor();
+        return new String(p.getInputStream().readAllBytes());
     }
 
     public void clearThumbnails(String path) {
@@ -358,16 +372,10 @@ public class FileManager {
             e.printStackTrace();
             System.out.println("FEHLER AUFGETRETEN: "+s.split("\\.")[0]);
         }
-
         String screenshotCmd = "ffmpeg -ss " + output + " -i \"" + f.getPath() + "\" -frames:v 1 -vf scale=320:-1 \"" + outpath+"\"";
-
         Process p2 = Runtime.getRuntime().exec(screenshotCmd);
         p2.waitFor();
-        //System.out.println(new String(p2.getInputStream().readAllBytes()));
-        //System.out.println(new String(p2.getErrorStream().readAllBytes()));
-        String s2 = new File(outpath).toURI().toString();
-        System.out.println(s2);
-        return new Image(s2);
+        return new Image(new File(outpath).toURI().toString());
     }
 
     public Image createImageGifThumbnail(DataFile f) {

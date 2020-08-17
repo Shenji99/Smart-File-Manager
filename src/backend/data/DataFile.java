@@ -31,6 +31,9 @@ public class DataFile {
 
     private DataFile parent;
 
+    //only for image and video
+    private int width, height;
+
     public DataFile() {
         this.files = new ArrayList<>();
         this.tags = new ArrayList<>();
@@ -259,6 +262,21 @@ public class DataFile {
         this.tagsLoaded = tagsLoaded;
     }
 
+    public int getHeight() {
+        return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
 }
 
 

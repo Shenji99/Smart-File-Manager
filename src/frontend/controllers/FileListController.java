@@ -53,6 +53,7 @@ public class FileListController implements FileObserver {
                     }
                 }
                 this.mainScreenController.loadThumbnailsInThread();
+                this.mainScreenController.loadResolutionsInThread();
                 this.fileManager.setTags();
                 updateView(fileManager.getAllFiles());
                 success = true;

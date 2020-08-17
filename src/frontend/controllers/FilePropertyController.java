@@ -26,7 +26,6 @@ import javafx.scene.media.MediaView;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -42,6 +41,8 @@ public class FilePropertyController implements FileObserver {
     private Label sizeLabel;
     private Label typeLabel;
     private Label changeDateLabel;
+    private Label widthHeightLabelValue;
+    private Label widthHeightLabel;
 
     private final ImageView thumbnail;
     private final ImageView playIcon;
@@ -65,6 +66,7 @@ public class FilePropertyController implements FileObserver {
     public FilePropertyController(MainScreenController mainScreenController) {
         this.mainScreenController = mainScreenController;
 
+        //these are all value labels
         this.propertiesWrapper = mainScreenController.getPropertiesWrapper();
         this.thumbnail = mainScreenController.getThumbnail();
         this.playIcon = mainScreenController.getPlayIcon();
@@ -76,6 +78,12 @@ public class FilePropertyController implements FileObserver {
         this.currentTime = mainScreenController.getCurrentTimeLabel();
         this.videoDuration = mainScreenController.getVideoDuratioNLabel();
         this.fileTagsBox = mainScreenController.getFileTagsBox();
+
+        //value and label seperated because it is initially not visible only for images/videos
+        this.widthHeightLabel = mainScreenController.getWidthHeightLabel();
+        this.widthHeightLabelValue = mainScreenController.getWidthHeightLabelValue();
+        this.widthHeightLabel.setVisible(false);
+        this.widthHeightLabelValue.setVisible(false);
 
         this.nameLabel = mainScreenController.getNameLabel();
         this.pathLabel = mainScreenController.getPathLabel();
@@ -196,15 +204,15 @@ public class FilePropertyController implements FileObserver {
 
     @Override
     public void onFileUpdate(DataFile dataFile) {
-        Platform.runLater(() -> {
-            try {
-                if(this.pathLabel.getText().equals(dataFile.getPath())){
+        if(this.pathLabel.getText().equals(dataFile.getPath())){
+            Platform.runLater(() -> {
+                try {
                     updateFileProperties(dataFile, false);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
+            });
+        }
     }
 
     public void updateThumbnail(DataFile f, boolean set) throws IOException, InterruptedException {
@@ -221,12 +229,22 @@ public class FilePropertyController implements FileObserver {
         if (!image.exists()) {
             Image img = null;
             switch (f.getType()){
-                case "webm":
-                case "mp4": img = FileManager.getInstance().createVideoThumbnail(f, outpath); break;
-                case "jpg":
-                case "png":
-                case "webp": img = FileManager.getInstance().createImageThumbnail(f, outpath); break;
-                case "gif": img = FileManager.getInstance().createImageGifThumbnail(f); break;
+                case "mp4"  : img = FileManager.getInstance().createVideoThumbnail(f, outpath);
+                break;
+                case "webm" :
+                case "ogg"  :
+                case "wmv"  :
+                case "avi"  :
+                case "mov"  :
+                case "jpg"  :
+                case "jpeg" :
+                case "png"  :
+                case "webp" :
+                case "tiff" :
+                case "bmp"  : img = FileManager.getInstance().createImageThumbnail(f, outpath);
+                break;
+                case "gif"  : img = FileManager.getInstance().createImageGifThumbnail(f);
+                break;
             }
             if(set){
                 this.thumbnail.setImage(img);
@@ -261,7 +279,7 @@ public class FilePropertyController implements FileObserver {
         }
     }
 
-    public void updateFileProperties(Event event, DataFile f) throws IOException, InterruptedException, URISyntaxException {
+    public void updateFileProperties(Event event, DataFile f) throws IOException, InterruptedException {
         if(event instanceof MouseEvent){
             if(((MouseEvent)event).getClickCount() == 2){
                 FileManager.getInstance().showFileInExplorer(f.getPath());
@@ -360,16 +378,65 @@ public class FilePropertyController implements FileObserver {
             cm.show(changeDateLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
         });
 
-        switch (f.getType()){
-            case "mp4":
-            case "avi": this.playIcon.setVisible(true); break;
-            default: this.playIcon.setVisible(false);
+        boolean hasWidthHeight = false;
+
+        //checking for mimetype image/... video/... would be better but it is more cost intensive
+        switch (f.getType()) {
+            case "jpg"  :
+            case "jpeg" :
+            case "gif"  :
+            case "png"  :
+            case "webp" :
+            case "tiff" :
+            case "bmp"  :
+                hasWidthHeight = true;
+                break;
+            case "mp4"  :
+                hasWidthHeight = true;
+                this.playIcon.setVisible(true);
+                break;
+            default:
+                this.playIcon.setVisible(false);
+        }
+
+        if(hasWidthHeight) {
+            updateWidthHeightLabel(f);
+        }else {
+            this.widthHeightLabel.setVisible(false);
+            this.widthHeightLabelValue.setVisible(false);
         }
 
         this.updateTags(f);
-//        this.updateTags(f, true);
-        if(updateThumbnail){
+        if(updateThumbnail) {
             this.updateThumbnail(f, true);
+        }
+    }
+
+    private void updateWidthHeightLabel(DataFile f) {
+        this.widthHeightLabel.setVisible(true);
+        this.widthHeightLabelValue.setVisible(true);
+
+        StackPane parent = (StackPane) this.widthHeightLabelValue.getParent();
+        this.widthHeightLabelValue.setText("");
+        //hide the loading spinner
+        Node spinner = null;
+        for(Node n: parent.getChildren()){
+            if(n instanceof ImageView) {
+                spinner = n;
+                break;
+            }
+        }
+        if(f.getWidth() != 0 && f.getHeight() != 0) {
+            this.widthHeightLabelValue.setText(f.getWidth()+"/"+f.getHeight());
+            if(spinner != null){
+                spinner.setVisible(false);
+            }
+        }else{
+            if(spinner == null) {
+                spinner = createLodingSpinner(20,20);
+                parent.getChildren().add(spinner);
+            }
+            spinner.setVisible(true);
         }
     }
 
@@ -423,23 +490,22 @@ public class FilePropertyController implements FileObserver {
             }
         }else {
             try{
-                setLoadingSpinner();
+                this.fileTagsBox.getChildren().clear();
+                this.fileTagsBox.getChildren().add(createLodingSpinner(40,40));
             }catch (Exception e){
                 e.printStackTrace();
             }
         }
     }
 
-
-    private void setLoadingSpinner() {
+    private ImageView createLodingSpinner(int width, int height) {
         ImageView spinnerIv = new ImageView();
-        spinnerIv.setFitHeight(40);
-        spinnerIv.setFitWidth(40);
+        spinnerIv.setFitWidth(width);
+        spinnerIv.setFitHeight(height);
         String pth = FileManager.getResourcePath(getClass(), "images", "spinner2.gif");
         Image spinner = new Image("file:/"+pth);
         spinnerIv.setImage(spinner);
-
-        this.fileTagsBox.getChildren().add(spinnerIv);
+        return spinnerIv;
     }
 
     private void updateTags(DataFile f, boolean set) {

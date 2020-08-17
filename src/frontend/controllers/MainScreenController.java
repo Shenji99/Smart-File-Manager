@@ -53,6 +53,8 @@ public class MainScreenController implements Initializable {
     @FXML private Label pathLabelValue;
     @FXML private Label typeLabelValue;
     @FXML private Label changeDateLabel;
+    @FXML private Label widthHeightLabel;
+    @FXML private Label widthHeightLabelValue;
 
 
     private FileManager fileManager;
@@ -280,5 +282,17 @@ public class MainScreenController implements Initializable {
         return this.changeDateLabel;
     }
 
+    public Label getWidthHeightLabel() {
+        return this.widthHeightLabel;
+    }
+
+    public Label getWidthHeightLabelValue() {
+        return this.widthHeightLabelValue;
+    }
+
+
+    public void loadResolutionsInThread() {
+        this.fileManager.loadResoulutionsInThread();
+    }
 
 }

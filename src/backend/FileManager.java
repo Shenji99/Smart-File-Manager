@@ -96,10 +96,6 @@ public class FileManager {
         }
     }
 
-    public List<DataFile> getRootFiles() {
-        return this.files;
-    }
-
     public List<DataFile> getAllFiles() {
         ArrayList<DataFile> allFiles = new ArrayList<>();
         for(DataFile file: this.files) {
@@ -113,7 +109,6 @@ public class FileManager {
             this.addChild(f);
         }
     }
-
 
     public void addChild(File file) throws IOException {
         DataFile foundFile = findFileByPath(file.getAbsolutePath());
@@ -140,7 +135,7 @@ public class FileManager {
      * It is important to process as many files at a time as possible to reduce computational resources. (opening exiftool is expensive)
      * The threads then process all the files and extract the tags (Category or Subject) and adds them to the files tag field
      */
-    public void setTags() {
+    public void loadTagsInThread() {
         this.loadTags = true;
         List<DataFile> files = getAllFiles();
         List<List<Object>> listArr = getSublists(files, TAG_THREAD_AMOUNT);
@@ -300,29 +295,16 @@ public class FileManager {
         return foundFiles;
     }
 
-    public static String getResourcePath(Class c, String foldername, String name){
-        String path = c.getResource("/"+foldername).getPath() + "/"+name;
-        path = path
-            .replace("/", "\\")
-            .substring(1);
-        return path;
-    }
-
-    public static String getResourcePath(Class c, String foldername) {
-        return getResourcePath(c, foldername, "");
-    }
-
-    public void loadThumbnailsInThread(FilePropertyController filePropertyController) {
+    public void loadThumbnailsInThread() {
         this.loadThumbnails = true;
         List<List<Object>> sublists = getSublists(getAllFiles(), THUMBNAIL_THREAD_AMOUNT);
         for(List<Object> list: sublists) {
             new Thread(() -> {
                 for(Object o: list) {
-                    //System.out.println("loading thumbnail..");
                     if(loadThumbnails){
                         try {
-                            String path = filePropertyController.createThumbnailPath((DataFile) o);
-                            filePropertyController.createThumbnail((DataFile) o, path);
+                            String path = createThumbnailPath((DataFile) o);
+                            createThumbnail((DataFile) o, path);
                         }catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -362,54 +344,12 @@ public class FileManager {
         }
     }
 
-    public static String getResolution(DataFile df) throws IOException, InterruptedException {
-        String cmd = "ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 ";
-        cmd += "\""+df.getPath()+"\"";
-        Process p = Runtime.getRuntime().exec(cmd);
-        p.waitFor();
-        return new String(p.getInputStream().readAllBytes());
-    }
-
     public void clearThumbnails(String path) {
         File dir = new File(path);
         for(File f: dir.listFiles()){
             f.delete();
         }
     }
-
-    public Image createImageThumbnail(DataFile f, String outpath) throws IOException, InterruptedException {
-        String screenshotCmd = "ffmpeg -i \"" + f.getPath() + "\" -vf scale=320:-1 \"" + outpath + "\"";
-        Process p2 = Runtime.getRuntime().exec(screenshotCmd);
-        p2.waitFor();
-        return new Image(new File(outpath).toURI().toString());
-    }
-
-    public Image createVideoThumbnail(DataFile f, String outpath) throws InterruptedException, IOException {
-        //get duration of video
-        String ffprobeCmd = "ffprobe -i \"" + f.getPath() + "\" -show_entries format=duration -v quiet -of csv=\"p=0\"";
-        Process p = Runtime.getRuntime().exec(ffprobeCmd);
-        p.waitFor();
-
-        //make screenshot and save it in folder
-        String s = new String(p.getInputStream().readAllBytes());
-        int output = 0;
-        try{
-            output = Integer.parseInt(s.split("\\.")[0]);
-            output = output / 2;
-        }catch (Exception e){
-            e.printStackTrace();
-            System.out.println("FEHLER AUFGETRETEN: "+s.split("\\.")[0]);
-        }
-        String screenshotCmd = "ffmpeg -ss " + output + " -i \"" + f.getPath() + "\" -frames:v 1 -vf scale=320:-1 \"" + outpath+"\"";
-        Process p2 = Runtime.getRuntime().exec(screenshotCmd);
-        p2.waitFor();
-        return new Image(new File(outpath).toURI().toString());
-    }
-
-    public Image createImageGifThumbnail(DataFile f) {
-        return new Image(new File(f.getPath()).toURI().toString());
-    }
-
 
     public void showFileInExplorer(String path) {
         try {
@@ -441,8 +381,72 @@ public class FileManager {
         this.loadResolutions = false;
     }
 
+
+
+    //utility methods
+    public static Image createImageThumbnail(DataFile f, String outpath) throws IOException, InterruptedException {
+        String screenshotCmd = "ffmpeg -i \"" + f.getPath() + "\" -vf scale=320:-1 \"" + outpath + "\"";
+        Process p2 = Runtime.getRuntime().exec(screenshotCmd);
+        p2.waitFor();
+        return new Image(new File(outpath).toURI().toString());
+    }
+
+    public static Image createVideoThumbnail(DataFile f, String outpath) throws InterruptedException, IOException {
+        //get duration of video
+        String ffprobeCmd = "ffprobe -i \"" + f.getPath() + "\" -show_entries format=duration -v quiet -of csv=\"p=0\"";
+        Process p = Runtime.getRuntime().exec(ffprobeCmd);
+        p.waitFor();
+
+        //make screenshot and save it in folder
+        String s = new String(p.getInputStream().readAllBytes());
+        int output = 0;
+        try{
+            output = Integer.parseInt(s.split("\\.")[0]);
+            output = output / 2;
+        }catch (Exception e){
+            e.printStackTrace();
+            System.out.println("FEHLER AUFGETRETEN: "+s.split("\\.")[0]);
+        }
+        String screenshotCmd = "ffmpeg -ss " + output + " -i \"" + f.getPath() + "\" -frames:v 1 -vf scale=320:-1 \"" + outpath+"\"";
+        Process p2 = Runtime.getRuntime().exec(screenshotCmd);
+        p2.waitFor();
+        return new Image(new File(outpath).toURI().toString());
+    }
+
+    public static Image createImageGifThumbnail(DataFile f) {
+        return new Image(new File(f.getPath()).toURI().toString());
+    }
+
+    public static String createThumbnailPath(DataFile f){
+        String newName = f.getPath().replace("\\", "+");
+        newName = newName.replace("/", "+");
+        newName = newName.replace(":", "+");
+
+        return FileManager.getResourcePath(FileManager.class, "thumbnails", newName+".jpg");
+    }
+
+    public static Image createThumbnail(DataFile f, String outpath) throws IOException, InterruptedException {
+        String mimetype = FileManager.getDataFileMimeType(f);
+        if(mimetype != null) {
+            String[] mimetypeSplit = mimetype.split("/");
+            String type = mimetypeSplit[0];
+            String ending = mimetypeSplit[1];
+
+            if(ending.equals("gif")){
+                return createImageGifThumbnail(f);
+            }else {
+                switch (type){
+                    case "video": return createVideoThumbnail(f, outpath);
+                    case "image": return createImageThumbnail(f, outpath);
+                }
+            }
+        }
+        return null;
+    }
+
     public static String getDataFileMimeType(DataFile df) {
         switch (df.getType()) {
+            //video
             case "mp4":
                 return "video/mp4";
             case "webm":
@@ -453,6 +457,9 @@ public class FileManager {
                 return "video/wmv";
             case "avi":
                 return "video/avi";
+            case "mov":
+                return "video/mov";
+            //image
             case "jpg":
                 return "image/jpg";
             case "jpeg":
@@ -467,12 +474,30 @@ public class FileManager {
                 return "image/bmp";
             case "gif":
                 return "image/gif";
-            case "mov":
-                return "image/mov";
             case "txt":
                 return "text/txt";
             default: return null;
         }
     }
+
+    public static String getResourcePath(Class c, String foldername, String name){
+        String path = c.getResource("/"+foldername).getPath() + "/"+name;
+        path = path
+            .replace("/", "\\")
+            .substring(1);
+        return path;
+    }
+
+    public static String getResourcePath(Class c, String foldername) {
+        return getResourcePath(c, foldername, "");
+    }
+
+    public static String getResolution(DataFile df) throws IOException, InterruptedException {
+        String cmd = "ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 ";
+        cmd += "\""+df.getPath()+"\"";
+        Process p = Runtime.getRuntime().exec(cmd);
+        p.waitFor();
+        return new String(p.getInputStream().readAllBytes());
+}
 
 }

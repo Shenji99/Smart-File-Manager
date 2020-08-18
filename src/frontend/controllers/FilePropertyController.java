@@ -1,8 +1,7 @@
 package frontend.controllers;
 
-import backend.data.DataFile;
 import backend.FileManager;
-import backend.FileObserver;
+import backend.data.DataFile;
 import backend.exceptions.InvalidFileNameException;
 import backend.exceptions.UnexpectedErrorException;
 import javafx.application.Platform;
@@ -18,6 +17,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -27,7 +27,6 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
@@ -35,7 +34,7 @@ import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
-public class FilePropertyController implements Initializable, FileObserver {
+public class FilePropertyController implements Initializable {
 
     private MainScreenController mainScreenController;
 
@@ -71,7 +70,7 @@ public class FilePropertyController implements Initializable, FileObserver {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        FileManager.getInstance().addObserver(this);
+//        FileManager.getInstance().addObserver(this);
 
         this.widthHeightLabel.setVisible(false);
         this.widthHeightLabelValue.setVisible(false);
@@ -163,18 +162,18 @@ public class FilePropertyController implements Initializable, FileObserver {
     }
 
 
-    @Override
-    public void onFileUpdate(DataFile dataFile) {
-        if(this.pathLabelValue.getText().equals(dataFile.getPath())){
-            Platform.runLater(() -> {
-                try {
-                    updateFileProperties(dataFile, false);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-    }
+//    @Override
+//    public void onFileUpdate(DataFile dataFile) {
+//        if(this.pathLabelValue.getText().equals(dataFile.getPath())) {
+//            Platform.runLater(() -> {
+//                try {
+//                    updateFileProperties(dataFile, false);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            });
+//        }
+//    }
 
     private void updateSliderValues(MediaPlayer player) {
         Platform.runLater(() -> {
@@ -200,37 +199,26 @@ public class FilePropertyController implements Initializable, FileObserver {
         });
     }
 
-
-    public String createThumbnailPath(DataFile f){
-        String newName = f.getPath().replace("\\", "+");
-        newName = newName.replace("/", "+");
-        newName = newName.replace(":", "+");
-
-        return FileManager.getResourcePath(getClass(), "thumbnails", newName+".jpg");
-    }
-
     public void updateThumbnail(DataFile f, boolean set) {
         if(set) {
             hideMediaPlayerVideo();
         }
         this.playIcon.setVisible(false);
         this.thumbnail.setImage(null);
-        String outpath = createThumbnailPath(f);
+        String outpath = FileManager.createThumbnailPath(f);
         File image = new File(outpath);
 
         try {
             //show the spinner while loading
             if(set) {
-                Platform.runLater(() -> {
-                    showThumbnailLoadingSpinner();
-                });
+                Platform.runLater(this::showThumbnailLoadingSpinner);
             }
             if (!image.exists()) {
                 //if thumbnail doesnt exist yet it gets created
                 //after that the thumbnail spinner is removed
                 executor.submit(() -> {
                     try {
-                        Image img = createThumbnail(f, outpath);
+                        Image img = FileManager.createThumbnail(f, outpath);
                         if(set) {
                             Platform.runLater(() -> {
                                 hideThumbnailLoadingSpinner();
@@ -289,25 +277,6 @@ public class FilePropertyController implements Initializable, FileObserver {
         }
     }
 
-    public Image createThumbnail(DataFile f, String outpath) throws IOException, InterruptedException {
-        String mimetype = FileManager.getDataFileMimeType(f);
-        if(mimetype != null) {
-            String[] mimetypeSplit = mimetype.split("/");
-            String type = mimetypeSplit[0];
-            String ending = mimetypeSplit[1];
-
-            if(ending.equals("gif")){
-                return FileManager.getInstance().createImageGifThumbnail(f);
-            }else {
-                switch (type){
-                    case "video": return FileManager.getInstance().createVideoThumbnail(f, outpath);
-                    case "image": return FileManager.getInstance().createImageThumbnail(f, outpath);
-                }
-            }
-        }
-        return null;
-    }
-
     private void hideMediaPlayerVideo() {
         setMediaControlVisibility(false);
 
@@ -330,7 +299,7 @@ public class FilePropertyController implements Initializable, FileObserver {
         }
     }
 
-    public void updateFileProperties(Event event, DataFile f) throws IOException, InterruptedException {
+    public void updateFileProperties(Event event, DataFile f) {
         if(event instanceof MouseEvent){
             if(((MouseEvent)event).getClickCount() == 2){
                 FileManager.getInstance().showFileInExplorer(f.getPath());
@@ -339,7 +308,7 @@ public class FilePropertyController implements Initializable, FileObserver {
         updateFileProperties(f, true);
     }
 
-    public void updateFileProperties(DataFile f, boolean updateThumbnail) throws InterruptedException, IOException {
+    public void updateFileProperties(DataFile f, boolean updateThumbnail) {
 
         updateNameValueLabel(f);
         updateSizeValueLabel(f);
@@ -347,33 +316,16 @@ public class FilePropertyController implements Initializable, FileObserver {
         updateTypeValueLabel(f);
         updateChangeDateValueLabel(f);
 
-        boolean hasWidthHeight = false;
+        String mimeType = FileManager.getDataFileMimeType(f);
+        if(mimeType != null){
+            this.playIcon.setVisible(mimeType.equals("video/mp4")); //only enable playicon at mp4 vids
 
-        //checking for mimetype image/... video/... would be better but it is more cost intensive
-        switch (f.getType()) {
-            case "jpg"  :
-            case "jpeg" :
-            case "gif"  :
-            case "png"  :
-            case "webp" :
-            case "tiff" :
-            case "bmp"  :
-                hasWidthHeight = true;
-                this.playIcon.setVisible(false);
-                break;
-            case "mp4"  :
-                hasWidthHeight = true;
-                this.playIcon.setVisible(true);
-                break;
-            default:
-                this.playIcon.setVisible(false);
-        }
-
-        if(hasWidthHeight) {
-            updateWidthHeightLabel(f);
-        }else {
-            this.widthHeightLabel.setVisible(false);
-            this.widthHeightLabelValue.setVisible(false);
+            if(mimeType.startsWith("video") || mimeType.startsWith("image")) {
+                updateWidthHeightLabel(f);
+            }else {
+                this.widthHeightLabel.setVisible(false);
+                this.widthHeightLabelValue.setVisible(false);
+            }
         }
 
         this.updateTags(f);
@@ -502,7 +454,7 @@ public class FilePropertyController implements Initializable, FileObserver {
             nameStackPane.getChildren().add(textfield);
 
             textfield.setOnKeyPressed(event1 -> {
-                if(event1.getCode().toString().equals("ENTER")) {
+                if(event1.getCode() == KeyCode.ENTER) {
                     String newName = textfield.getText();
                     if(!newName.equals(f.getName())){
                         try{
@@ -535,17 +487,12 @@ public class FilePropertyController implements Initializable, FileObserver {
     private void updateTags(DataFile f) {
         this.fileTagsBox.getChildren().clear();
         if(f.isTagsLoaded()){
-            List<String> tags = f.getTags();
-            for(String tag: tags){
-                StackPane stack = new StackPane();
-                Label l = new Label(tag);
-                l.setAlignment(Pos.CENTER);
-                l.getStyleClass().add("tag");
-
-                stack.getChildren().add(l);
-                this.fileTagsBox.getChildren().add(l);
-            }
+            createTags(f);
         }else {
+
+            showTagsLoadingSpinner();
+
+
             executor.submit(() -> {
                 try{
                     String cmd = FileManager.getResourcePath(getClass(), "exiftool", "exiftool.exe");
@@ -555,17 +502,61 @@ public class FilePropertyController implements Initializable, FileObserver {
                     p.waitFor();
                     String res = new String(p.getInputStream().readAllBytes());
                     FileManager.getInstance().updateFiles(res);
+                    Platform.runLater(() -> {
+                        removeTagsLoadingSpinner();
+                        createTags(f);
+                    });
                 }catch (Exception e){
                     e.printStackTrace();
                 }
             });
 
-            try{
-                this.fileTagsBox.getChildren().clear();
-                this.fileTagsBox.getChildren().add(this.mainScreenController.createLodingSpinner(40,40));
-            }catch (Exception e) {
-                e.printStackTrace();
+        }
+    }
+
+    private void removeTagsLoadingSpinner() {
+        for(Node n: this.fileTagsBox.getChildren()){
+            if(n instanceof ImageView && n.getId() != null && n.getId().equals("spinner")){
+                n.setVisible(false);
+                this.fileTagsBox.getChildren().remove(n);
+                return;
             }
+        }
+    }
+
+    private void showTagsLoadingSpinner() {
+        try{
+            ImageView spinner = null;
+            for(Node n: this.fileTagsBox.getChildren()){
+                if(n instanceof ImageView && n.getId() != null && n.getId().equals("spinner")){
+                    spinner = (ImageView) n;
+                    break;
+                }
+            }
+
+            if(spinner == null){
+                spinner = this.mainScreenController.createLodingSpinner(40,40);
+                spinner.setId("spinner");
+            }
+            spinner.setVisible(true);
+
+            this.fileTagsBox.getChildren().clear();
+            this.fileTagsBox.getChildren().add(spinner);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createTags(DataFile f) {
+        List<String> tags = f.getTags();
+        for(String tag: tags){
+            StackPane stack = new StackPane();
+            Label l = new Label(tag);
+            l.setAlignment(Pos.CENTER);
+            l.getStyleClass().add("tag");
+
+            stack.getChildren().add(l);
+            this.fileTagsBox.getChildren().add(l);
         }
     }
 

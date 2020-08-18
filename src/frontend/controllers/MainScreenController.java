@@ -34,10 +34,6 @@ public class MainScreenController implements Initializable {
         this.fileManager = FileManager.getInstance();
     }
 
-    public void loadThumbnailsInThread() {
-        this.fileManager.loadThumbnailsInThread(this.filePropertyController);
-    }
-
     public void closeApp(ActionEvent actionEvent) {
         Platform.exit();
         FileManager.getInstance().stopAllBackgroundThreads();
@@ -77,9 +73,9 @@ public class MainScreenController implements Initializable {
             }
             Platform.runLater(() -> {
                 this.fileListController.setListViewLoadingSpinner(false);
-                loadThumbnailsInThread();
+                this.fileManager.loadThumbnailsInThread();
                 this.fileManager.loadResolutionsInThread();
-                this.fileManager.setTags();
+                this.fileManager.loadTagsInThread();
                 this.fileListController.updateView(fileManager.getAllFiles());
                 this.fileListController.setListViewLoadingSpinner(false);
             });
@@ -97,9 +93,9 @@ public class MainScreenController implements Initializable {
             }
             Platform.runLater(() -> {
                 this.fileListController.setListViewLoadingSpinner(false);
-                loadThumbnailsInThread();
+                this.fileManager.loadThumbnailsInThread();
                 this.fileManager.loadResolutionsInThread();
-                this.fileManager.setTags();
+                this.fileManager.loadTagsInThread();
                 this.fileListController.updateView(fileManager.getAllFiles());
                 this.fileListController.setListViewLoadingSpinner(false);
             });

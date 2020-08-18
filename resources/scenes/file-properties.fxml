@@ -20,7 +20,7 @@
 <?import javafx.scene.media.MediaView?>
 <?import javafx.scene.text.Font?>
 
-<VBox fx:id="propertiesWrapper" alignment="TOP_CENTER" onMouseClicked="#filePropertiesPaneClicked" spacing="10.0" stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="frontend.controllers.FilePropertyController">
+<VBox fx:id="propertiesWrapper" alignment="TOP_CENTER" onMouseClicked="#filePropertiesPaneClicked" spacing="10.0" style="-fx-background-color: -fx-primary-grey;" stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="frontend.controllers.FilePropertyController">
    <children>
       <StackPane prefHeight="0.0" prefWidth="0.0">
          <VBox.margin>
@@ -122,7 +122,7 @@
                   <Label fx:id="widthHeightLabel" maxWidth="Infinity" styleClass="file-property" text="Breite/Höhe:" GridPane.rowIndex="3" />
                   <StackPane alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="3">
                      <children>
-                        <Label fx:id="widthHeightLabelValue" styleClass="file-property-value" />
+                        <Label fx:id="widthHeightLabelValue" styleClass="file-property-value" StackPane.alignment="CENTER_LEFT" />
                      </children>
                   </StackPane>
                </children>

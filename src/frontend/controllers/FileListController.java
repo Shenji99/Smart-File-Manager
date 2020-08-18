@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class FileListController implements Initializable, FileObserver {
+public class FileListController implements Initializable {
 
     private MainScreenController mainScreenController;
 
@@ -33,7 +33,7 @@ public class FileListController implements Initializable, FileObserver {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        FileManager.getInstance().addObserver(this);
+//        FileManager.getInstance().addObserver(this);
 
         this.fileList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
@@ -62,10 +62,10 @@ public class FileListController implements Initializable, FileObserver {
         });
     }
 
-    @Override
-    public void onFileUpdate(DataFile dataFile) {
-
-    }
+//    @Override
+//    public void onFileUpdate(DataFile dataFile) {
+//
+//    }
 
     public void setListViewLoadingSpinner(boolean on) {
         StackPane stack = (StackPane) this.fileList.getParent();
@@ -97,7 +97,13 @@ public class FileListController implements Initializable, FileObserver {
             }
         }
         this.filesAmountLabel.setText(Integer.toString(fileAmt));
-        this.filesTotalSizeLabel.setText("("+DataFile.getFormattedSize(totalSize)+")");
+        String size = DataFile.getFormattedSize(totalSize);
+        if(size != null){
+            this.filesTotalSizeLabel.setText("("+DataFile.getFormattedSize(totalSize)+")");
+        }else {
+            this.filesTotalSizeLabel.setText("");
+        }
+
     }
 
     public void updateView(String path) {

@@ -1,39 +1,41 @@
 package frontend.controllers;
 
-import backend.data.DataFile;
 import backend.FileManager;
 import backend.FileObserver;
-import javafx.application.Platform;
+import backend.data.DataFile;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.*;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 
-import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
 
-public class FileListController implements FileObserver {
+public class FileListController implements Initializable, FileObserver {
 
-    private final ListView fileList;
-    private final FileManager fileManager;
+    private MainScreenController mainScreenController;
 
-    private final MainScreenController mainScreenController;
-    private final Label filesAmountLabel;
-    private final Label filesTotalSizeLabel;
+    @FXML public ListView fileList;
+    @FXML public Label filesAmountLabel;
+    @FXML public Label filesTotalSizeLabel;
 
-    public FileListController(MainScreenController mainScreenController) {
-        this.mainScreenController = mainScreenController;
 
-        this.fileList = this.mainScreenController.getFileList();
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        FileManager.getInstance().addObserver(this);
+
         this.fileList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        this.fileManager = this.mainScreenController.getFileManager();
-
-        this.filesAmountLabel = mainScreenController.getFilesAmountLabel();
-        this.filesTotalSizeLabel = mainScreenController.getFilesTotalSizeLabel();
 
         fileList.setOnDragOver(event -> {
             event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
@@ -100,7 +102,7 @@ public class FileListController implements FileObserver {
 
     public void updateView(String path) {
         fileList.getItems().clear();
-        ArrayList<DataFile> files = fileManager.getFiles(path);
+        ArrayList<DataFile> files = FileManager.getInstance().getFiles(path);
         updateView(files);
     }
 
@@ -151,23 +153,87 @@ public class FileListController implements FileObserver {
     }
 
     public void listViewItemClicked(Event event) {
-        try {
-            HBox a = (HBox) fileList.getSelectionModel().getSelectedItem();
-            Label selectedFilePath = (Label) ((HBox)(a.getChildren().get(4))).getChildren().get(0);
-            DataFile f = FileManager.getInstance().findFileByPath(selectedFilePath.getText());
-            this.mainScreenController.updateFileProperties(event, f);
+        FilePropertyController filePropertyController = mainScreenController.getFilePropertyController();
+        if(event.getTarget() != filePropertyController.getNameLabel()) {
+            filePropertyController.hideNameEdit();
+            try {
+                HBox a = (HBox) fileList.getSelectionModel().getSelectedItem();
+                Label selectedFilePath = (Label) ((HBox)(a.getChildren().get(4))).getChildren().get(0);
+                DataFile f = FileManager.getInstance().findFileByPath(selectedFilePath.getText());
 
-            if(event instanceof KeyEvent) {
-                KeyEvent e = (KeyEvent) event;
-                if(e.getCode() == KeyCode.DELETE){
-                    fileManager.deleteFile(f.getPath());
-                    updateView(fileManager.getAllFiles());
+                this.mainScreenController.getFilePropertyController().updateFileProperties(event, f);
+                this.mainScreenController.getFilePropertyController().unhidePanel();
+
+                if(event instanceof KeyEvent) {
+                    KeyEvent e = (KeyEvent) event;
+                    if(e.getCode() == KeyCode.DELETE){
+                        FileManager.getInstance().deleteFile(f.getPath());
+                        updateView(FileManager.getInstance().getAllFiles());
+                    }
                 }
+            }catch (Exception e){
+                //can be ignored
             }
-        }catch (Exception e){
-            //can be ignored
         }
     }
 
+
+    public void orderBySizeClicked(ActionEvent actionEvent) {
+        FileManager fileManager = FileManager.getInstance();
+        if(fileManager.getAllFiles() != null) {
+            List files = fileManager.getAllFiles();
+            fileManager.sort(files, "size");
+            updateView(files);
+        }
+    }
+
+    public void orderByTypeClicked(ActionEvent actionEvent) {
+        FileManager fileManager = FileManager.getInstance();
+        if(fileManager.getAllFiles() != null) {
+            List files = fileManager.getAllFiles();
+            fileManager.sort(files, "type");
+            updateView(files);
+        }
+    }
+
+    public void orderByNameClicked(ActionEvent actionEvent) {
+        FileManager fileManager = FileManager.getInstance();
+        if(fileManager.getAllFiles() != null) {
+            List files = fileManager.getAllFiles();
+            fileManager.sort(files, "name");
+            updateView(files);
+        }
+    }
+
+    public void orderByDateClicked(ActionEvent actionEvent) {
+        FileManager fileManager = FileManager.getInstance();
+        if(fileManager.getAllFiles() != null) {
+            List files = fileManager.getAllFiles();
+            fileManager.sort(files, "changeDate");
+            updateView(files);
+        }
+    }
+
+    public void clearListClicked(ActionEvent actionEvent) {
+        FileManager fileManager = FileManager.getInstance();
+        fileManager.deleteAllFiles();
+        fileManager.stopAllBackgroundThreads();
+        mainScreenController.getFilePropertyController().clearPanel();
+        updateView(fileManager.getAllFiles());
+    }
+
+    public void searchFiles(KeyEvent keyEvent) {
+        TextField src = (TextField) keyEvent.getSource();
+        if(!src.getText().isEmpty()){
+            ArrayList<DataFile> found = (ArrayList<DataFile>) FileManager.getInstance().searchFiles(src.getText());
+            updateView(found);
+        }else {
+            updateView(FileManager.getInstance().getAllFiles());
+        }
+    }
+
+    public void setMainScreenController(MainScreenController controller) {
+        this.mainScreenController = controller;
+    }
 
 }

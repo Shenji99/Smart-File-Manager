@@ -321,7 +321,8 @@ public class FileManager {
                     //System.out.println("loading thumbnail..");
                     if(loadThumbnails){
                         try {
-                            filePropertyController.updateThumbnail((DataFile) o, false);
+                            String path = filePropertyController.createThumbnailPath((DataFile) o);
+                            filePropertyController.createThumbnail((DataFile) o, path);
                         }catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -438,6 +439,40 @@ public class FileManager {
         this.loadTags = false;
         this.loadThumbnails = false;
         this.loadResolutions = false;
+    }
+
+    public static String getDataFileMimeType(DataFile df) {
+        switch (df.getType()) {
+            case "mp4":
+                return "video/mp4";
+            case "webm":
+                return "video/webm";
+            case "ogg":
+                return "video/ogg";
+            case "wmv":
+                return "video/wmv";
+            case "avi":
+                return "video/avi";
+            case "jpg":
+                return "image/jpg";
+            case "jpeg":
+                return "image/jpeg";
+            case "png":
+                return "image/png";
+            case "webp":
+                return "image/webp";
+            case "tiff":
+                return "image/tiff";
+            case "bmp":
+                return "image/bmp";
+            case "gif":
+                return "image/gif";
+            case "mov":
+                return "image/mov";
+            case "txt":
+                return "text/txt";
+            default: return null;
+        }
     }
 
 }

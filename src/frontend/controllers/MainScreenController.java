@@ -1,6 +1,9 @@
 package frontend.controllers;
 
-import backend.FileManager;
+import backend.*;
+import backend.tasks.Callback;
+import backend.tasks.Task;
+import backend.tasks.TaskManager;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -22,7 +25,6 @@ import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainScreenController implements Initializable {
 
@@ -36,19 +38,12 @@ public class MainScreenController implements Initializable {
 
     private Stage stage;
 
-    private AtomicInteger thumbnailLoadedProgress;
-    private AtomicInteger resolutionLoadedProgress;
-    private AtomicInteger tagsLoadedProgress;
-
     public MainScreenController() {
     }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         this.fileManager = FileManager.getInstance();
-        this.thumbnailLoadedProgress = new AtomicInteger();
-        this.resolutionLoadedProgress = new AtomicInteger();
-        this.tagsLoadedProgress = new AtomicInteger();
     }
 
     public void closeApp(ActionEvent actionEvent) {
@@ -110,23 +105,46 @@ public class MainScreenController implements Initializable {
     }
 
     private void loadImportedFiles(List<File> files) {
+
+        TaskManager tm = new TaskManager();
+
+        //what happens if a task is finished
+        tm.addTaskObserver(task -> {
+            updateStatus();
+        });
+
+        tm.addTask(new Task(new TaskRunnable() {
+            @Override
+            public void run(Callback callback) {
+                fileManager.loadThumbnailsInThread(files, callback);
+            }
+        }));
+
+        tm.addTask(new Task(new TaskRunnable() {
+            @Override
+            public void run(Callback callback) {
+                fileManager.loadResolutionsInThread(files, callback);
+            }
+        }));
+
+        tm.addTask(new Task(new TaskRunnable() {
+            @Override
+            public void run(Callback callback) {
+                fileManager.loadTagsInThread(files, callback);
+            }
+        }));
+
         Platform.runLater(() -> {
-
-            this.thumbnailLoadedProgress.set(0);
-            this.resolutionLoadedProgress.set(0);
-            this.tagsLoadedProgress.set(0);
-            showStatusLoading(3);
-
+            showStatusLoading(tm.getTasksSize());
             this.fileListController.setListViewLoadingSpinner(false);
-            this.fileManager.loadThumbnailsInThread(files, (args) -> updateStatus(args));
-            this.fileManager.loadResolutionsInThread(files, (args) -> updateStatus(args));
-            this.fileManager.loadTagsInThread(files, (args) -> updateStatus(args));
 
             //updates the view with the current settings (includes the newly imported files)
             this.fileListController.searchFiles();
-
             this.fileListController.setListViewLoadingSpinner(false);
         });
+
+        tm.startAllTasks();
+
     }
 
     private void showStatusLoading(int taskAmount) {
@@ -150,43 +168,21 @@ public class MainScreenController implements Initializable {
     }
 
 
-    private void updateStatus(Object... args) {
+    private void updateStatus() {
         try {
-            String origin = (String) args[0];
-            int size = (int) args[1];
-            boolean reached = false;
-            switch (origin){
-                case "thumbnail":
-                    thumbnailLoadedProgress.set(thumbnailLoadedProgress.get()+1);
-                    System.out.println("thumbnail: "+thumbnailLoadedProgress+"/"+size);
-                    reached = thumbnailLoadedProgress.get() == size;
-                    break;
-                case "tags":
-                    tagsLoadedProgress.set(tagsLoadedProgress.get()+1);
-                    System.out.println("tags: "+tagsLoadedProgress+"/"+size);
-                    reached = tagsLoadedProgress.get() == size;
-                    break;
-                case "resolution":
-                    resolutionLoadedProgress.set(resolutionLoadedProgress.get()+1);
-                    System.out.println("resolution: "+resolutionLoadedProgress+"/"+size);
-                    reached = resolutionLoadedProgress.get() == size;
-                    break;
-            }
-            if(reached){
-                Platform.runLater(() -> {
-                    String[] statustext = appStatusLabel.getText().split(" ");
-                    if(statustext.length == 3){
-                        int remainingTasks = Integer.parseInt(statustext[1])-1;
-                        statustext[1] = Integer.toString(remainingTasks);
-                        if(remainingTasks == 0){
-                            appStatusLabel.setText("");
-                            appStatusLabel.getParent().setVisible(false);
-                        }else {
-                            appStatusLabel.setText(String.join(" ", statustext));
-                        }
+            Platform.runLater(() -> {
+                String[] statustext = appStatusLabel.getText().split(" ");
+                if(statustext.length == 3){
+                    int remainingTasks = Integer.parseInt(statustext[1])-1;
+                    statustext[1] = Integer.toString(remainingTasks);
+                    if(remainingTasks == 0){
+                        appStatusLabel.setText("");
+                        appStatusLabel.getParent().setVisible(false);
+                    }else {
+                        appStatusLabel.setText(String.join(" ", statustext));
                     }
-                });
-            }
+                }
+            });
         }catch (Exception e){
             e.printStackTrace();
         }

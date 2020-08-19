@@ -2,6 +2,7 @@ package backend;
 
 import backend.data.DataFile;
 import backend.exceptions.UnexpectedErrorException;
+import backend.tasks.Callback;
 import javafx.scene.image.Image;
 
 import java.awt.*;
@@ -9,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class FileManager {
 
@@ -132,16 +134,17 @@ public class FileManager {
         this.loadThumbnails = true;
         List dataFiles = getDataFiles(files);
         List<List<Object>> sublists = getSublists(dataFiles, THUMBNAIL_THREAD_AMOUNT);
+        AtomicInteger finishedThreads = new AtomicInteger(0);
+
         for(List<Object> list: sublists) {
             if(!loadThumbnails){
                 break;
             }
             new Thread(() -> {
-                for(Object o: list) {
+                for(Object o: list){
                     if(loadThumbnails){
                         try {
                             String path = createThumbnailPath((DataFile) o);
-                            //TODO BUG HERE DOES NOT UPDATE WHEN AN IMAGE ALREADY EXISTS
                             createThumbnail((DataFile) o, path);
                         }catch (Exception e) {
                             e.printStackTrace();
@@ -150,7 +153,10 @@ public class FileManager {
                         break;
                     }
                 }
-                callback.run("thumbnail", sublists.size());
+                int val = finishedThreads.incrementAndGet();
+                if(val == sublists.size()){
+                    callback.run();
+                }
             }).start();
         }
     }
@@ -159,6 +165,7 @@ public class FileManager {
         this.loadResolutions = true;
         List dataFiles = getDataFiles(files);
         List<List<Object>> sublists = getSublists(dataFiles, THUMBNAIL_THREAD_AMOUNT);
+        AtomicInteger finishedThreads = new AtomicInteger(0);
         for(List<Object> list: sublists) {
             if(!loadResolutions){
                 break;
@@ -185,7 +192,10 @@ public class FileManager {
                         break;
                     }
                 }
-                callback.run("resolution", sublists.size());
+                int val = finishedThreads.incrementAndGet();
+                if(val == sublists.size()){
+                    callback.run();
+                }
             }).start();
         }
     }
@@ -198,11 +208,13 @@ public class FileManager {
      * (to not reach maximum cmd line length)
      * It is important to process as many files at a time as possible to reduce computational resources. (opening exiftool is expensive)
      * The threads then process all the files and extract the tags (Category or Subject) and adds them to the files tag field
+     * After all Threads are finished the callback method gets run
      */
     public void loadTagsInThread(List files, Callback callback) {
         this.loadTags = true;
         List dataFiles = getDataFiles(files);
         List<List<Object>> listArr = getSublists(dataFiles, TAG_THREAD_AMOUNT);
+        AtomicInteger finishedThreads = new AtomicInteger(0);
 
         for(int i = 0; i < listArr.size(); i++) {
             if(!loadTags){
@@ -255,7 +267,10 @@ public class FileManager {
                             }
                         }
                     }
-                    callback.run("tags", listArr.size());
+                    int val = finishedThreads.incrementAndGet();
+                    if(val == listArr.size()){
+                        callback.run();
+                    }
                 }).start();
             }
         }

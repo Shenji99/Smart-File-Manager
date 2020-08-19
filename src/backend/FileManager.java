@@ -488,9 +488,11 @@ public class FileManager {
 
     //utility methods
     public static Image createImageThumbnail(DataFile f, String outpath) throws IOException, InterruptedException {
-        String screenshotCmd = "ffmpeg -i \"" + f.getPath() + "\" -vf scale=320:-1 \"" + outpath + "\"";
-        Process p2 = Runtime.getRuntime().exec(screenshotCmd);
-        p2.waitFor();
+        if(!new File(outpath).exists()) {
+            String screenshotCmd = "ffmpeg -i \"" + f.getPath() + "\" -n -vf scale=320:-1 \"" + outpath + "\"";
+            Process p2 = Runtime.getRuntime().exec(screenshotCmd);
+            p2.waitFor();
+        }
         return new Image(new File(outpath).toURI().toString());
     }
 
@@ -510,9 +512,11 @@ public class FileManager {
             e.printStackTrace();
             System.out.println("FEHLER AUFGETRETEN: "+s.split("\\.")[0]);
         }
-        String screenshotCmd = "ffmpeg -ss " + output + " -i \"" + f.getPath() + "\" -frames:v 1 -vf scale=320:-1 \"" + outpath+"\"";
-        Process p2 = Runtime.getRuntime().exec(screenshotCmd);
-        p2.waitFor();
+        if(!new File(outpath).exists()){
+            String screenshotCmd = "ffmpeg -ss " + output + " -i \"" + f.getPath() + "\" -n -frames:v 1 -vf scale=320:-1 \"" + outpath+"\"";
+            Process p2 = Runtime.getRuntime().exec(screenshotCmd);
+            p2.waitFor();
+        }
         return new Image(new File(outpath).toURI().toString());
     }
 
@@ -534,11 +538,10 @@ public class FileManager {
             String[] mimetypeSplit = mimetype.split("/");
             String type = mimetypeSplit[0];
             String ending = mimetypeSplit[1];
-
             if(ending.equals("gif")){
                 return createImageGifThumbnail(f);
             }else {
-                switch (type){
+                switch (type) {
                     case "video": return createVideoThumbnail(f, outpath);
                     case "image": return createImageThumbnail(f, outpath);
                 }

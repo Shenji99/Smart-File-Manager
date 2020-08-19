@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainScreenController implements Initializable {
 
@@ -35,13 +36,19 @@ public class MainScreenController implements Initializable {
 
     private Stage stage;
 
-    private int thumbnailLoadedProgress;
-    private int resolutionLoadedProgress;
-    private int tagsLoadedProgress;
+    private AtomicInteger thumbnailLoadedProgress;
+    private AtomicInteger resolutionLoadedProgress;
+    private AtomicInteger tagsLoadedProgress;
+
+    public MainScreenController() {
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         this.fileManager = FileManager.getInstance();
+        this.thumbnailLoadedProgress = new AtomicInteger();
+        this.resolutionLoadedProgress = new AtomicInteger();
+        this.tagsLoadedProgress = new AtomicInteger();
     }
 
     public void closeApp(ActionEvent actionEvent) {
@@ -105,29 +112,15 @@ public class MainScreenController implements Initializable {
     private void loadImportedFiles(List<File> files) {
         Platform.runLater(() -> {
 
-            synchronized (this){
-                thumbnailLoadedProgress = 0;
-                resolutionLoadedProgress = 0;
-                tagsLoadedProgress = 0;
-                showStatusLoading(3);
-            }
+            this.thumbnailLoadedProgress.set(0);
+            this.resolutionLoadedProgress.set(0);
+            this.tagsLoadedProgress.set(0);
+            showStatusLoading(3);
 
             this.fileListController.setListViewLoadingSpinner(false);
-            this.fileManager.loadThumbnailsInThread(files, (args) -> {
-                synchronized (this){
-                    updateStatus(args);
-                }
-            });
-            this.fileManager.loadResolutionsInThread(files, (args) ->{
-                synchronized (this){
-                    updateStatus(args);
-                }
-            });
-            this.fileManager.loadTagsInThread(files, (args) ->{
-                synchronized (this){
-                    updateStatus(args);
-                }
-            });
+            this.fileManager.loadThumbnailsInThread(files, (args) -> updateStatus(args));
+            this.fileManager.loadResolutionsInThread(files, (args) -> updateStatus(args));
+            this.fileManager.loadTagsInThread(files, (args) -> updateStatus(args));
 
             //updates the view with the current settings (includes the newly imported files)
             this.fileListController.searchFiles();
@@ -164,19 +157,19 @@ public class MainScreenController implements Initializable {
             boolean reached = false;
             switch (origin){
                 case "thumbnail":
-                    thumbnailLoadedProgress++;
+                    thumbnailLoadedProgress.set(thumbnailLoadedProgress.get()+1);
                     System.out.println("thumbnail: "+thumbnailLoadedProgress+"/"+size);
-                    reached = thumbnailLoadedProgress == size;
+                    reached = thumbnailLoadedProgress.get() == size;
                     break;
                 case "tags":
-                    tagsLoadedProgress++;
+                    tagsLoadedProgress.set(tagsLoadedProgress.get()+1);
                     System.out.println("tags: "+tagsLoadedProgress+"/"+size);
-                    reached = tagsLoadedProgress == size;
+                    reached = tagsLoadedProgress.get() == size;
                     break;
                 case "resolution":
-                    resolutionLoadedProgress++;
+                    resolutionLoadedProgress.set(resolutionLoadedProgress.get()+1);
                     System.out.println("resolution: "+resolutionLoadedProgress+"/"+size);
-                    reached = resolutionLoadedProgress == size;
+                    reached = resolutionLoadedProgress.get() == size;
                     break;
             }
             if(reached){

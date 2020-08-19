@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox prefHeight="200.0" prefWidth="100.0" style="-fx-background-color: -fx-primary-grey;" stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="frontend.controllers.FileListController">
+<VBox prefHeight="500" prefWidth="600.0" style="-fx-background-color: -fx-primary-grey;" stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="frontend.controllers.FileListController">
    <children>
       <StackPane>
          <children>
@@ -23,7 +23,7 @@
             <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
          </VBox.margin>
          <children>
-            <HBox prefHeight="100.0" prefWidth="200.0" spacing="20.0">
+            <HBox spacing="20.0">
                <children>
                   <HBox spacing="5.0">
                      <children>
@@ -34,24 +34,36 @@
                   </HBox>
                </children>
             </HBox>
-            <HBox alignment="CENTER_LEFT" prefHeight="50.0" prefWidth="565.0" spacing="19.0">
+            <HBox alignment="CENTER_LEFT" spacing="20.0" VBox.vgrow="ALWAYS">
                <children>
-                  <SplitMenuButton minHeight="25.0" minWidth="124.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="124.0" text="Sortieren nach">
+                  <SplitMenuButton fx:id="sortMenuButton" contentDisplay="RIGHT" minWidth="124.0" mnemonicParsing="false" popupSide="TOP" text="Sortieren nach">
                      <items>
                         <MenuItem mnemonicParsing="false" onAction="#orderBySizeClicked" text="Größe" />
                         <MenuItem mnemonicParsing="false" onAction="#orderByTypeClicked" text="Typ" />
                         <MenuItem mnemonicParsing="false" onAction="#orderByNameClicked" text="Name" />
+                        <MenuItem mnemonicParsing="false" onAction="#orderByTagsClicked" text="Tags" />
                         <MenuItem mnemonicParsing="false" onAction="#orderByDateClicked" text="Änderungsdatum" />
                      </items>
                   </SplitMenuButton>
-                  <HBox alignment="CENTER_RIGHT" prefWidth="999999.0">
+                  <HBox alignment="CENTER_RIGHT" prefHeight="29.0" prefWidth="419.0" spacing="10.0">
                      <children>
-                        <TextField maxHeight="20.0" minHeight="20.0" onKeyTyped="#searchFiles" prefHeight="20.0" prefWidth="252.0" promptText="Suchen...">
+                        <TextField fx:id="searchField" maxHeight="20.0" minHeight="20.0" onKeyTyped="#searchFiles" prefHeight="20.0" prefWidth="224.0" promptText="Suchen...">
                            <HBox.margin>
-                              <Insets right="30.0" />
+                              <Insets />
                            </HBox.margin>
                         </TextField>
-                        <Button minHeight="25.0" minWidth="113.0" mnemonicParsing="false" onAction="#clearListClicked" prefHeight="25.0" prefWidth="113.0" text="Clear List" />
+                        <SplitMenuButton fx:id="searchByButton" contentDisplay="RIGHT" mnemonicParsing="false" popupSide="TOP" prefHeight="29.0" text="Suchen nach">
+                          <items>
+                            <MenuItem mnemonicParsing="false" onAction="#searchByNameClicked" text="Name" />
+                            <MenuItem mnemonicParsing="false" onAction="#searchByPathClicked" text="Pfad" />
+                              <MenuItem mnemonicParsing="false" onAction="#searchByTagsClicked" text="Tags" />
+                          </items>
+                        </SplitMenuButton>
+                        <Button mnemonicParsing="false" onAction="#clearListClicked" prefHeight="29.0" text="Clear List">
+                           <HBox.margin>
+                              <Insets />
+                           </HBox.margin>
+                        </Button>
                      </children>
                   </HBox>
                </children>

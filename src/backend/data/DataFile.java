@@ -118,7 +118,7 @@ public class DataFile {
 
     public ArrayList<DataFile> getChildren() {
         try {
-            return getChildrenRecursive(new ArrayList<DataFile>());
+            return getChildrenRecursive(new ArrayList<>());
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -179,6 +179,8 @@ public class DataFile {
             return size/1000000+" MB";
         }else if(size >= 1000) {
             return size/1000+" KB";
+        }else if(size < 1000) {
+            return size+" Bytes";
         }
         return null;
     }
@@ -192,6 +194,15 @@ public class DataFile {
         if(!this.tags.contains(tag)) {
             this.tags.add(tag);
         }
+    }
+
+    public boolean isInTags(String str) {
+        for(String tag: this.tags){
+            if(tag.toLowerCase().contains(str.toLowerCase())){
+                return true;
+            }
+        }
+        return false;
     }
 
     //GETTER SETTER
@@ -279,6 +290,7 @@ public class DataFile {
     public void setWidth(int width) {
         this.width = width;
     }
+
 }
 
 

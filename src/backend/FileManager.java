@@ -1,14 +1,13 @@
 package backend;
 
 import backend.data.DataFile;
-import frontend.controllers.FilePropertyController;
+import backend.exceptions.UnexpectedErrorException;
 import javafx.scene.image.Image;
 
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.List;
 
 public class FileManager {
@@ -24,6 +23,7 @@ public class FileManager {
     private boolean loadThumbnails;
     private boolean loadTags;
     private boolean loadResolutions;
+    private SearchOption searchOption;
 
     public FileManager() {
         this.files = new ArrayList<>();
@@ -31,6 +31,7 @@ public class FileManager {
         this.loadThumbnails = true;
         this.loadTags = true;
         this.loadResolutions = true;
+        searchOption = SearchOption.Name; //default
     }
 
     public void notifyObservers(DataFile file) {
@@ -72,7 +73,7 @@ public class FileManager {
         return null;
     }
 
-    public void sort(List<DataFile> files, String fieldName) {
+    public void sort(List<DataFile> files, SearchOption searchOption) {
         boolean unsorted = true;
         while (unsorted) {
             unsorted = false;
@@ -80,11 +81,12 @@ public class FileManager {
                 boolean comparision = false;
                 DataFile f1 = files.get(i);
                 DataFile f2 = files.get(i+1);
-                switch(fieldName){
-                    case "size": comparision = f1.getSize() > f2.getSize(); break;
-                    case "type": comparision = f1.getType().compareTo(f2.getType()) > 0; break;
-                    case "name": comparision = f1.getName().compareTo(f2.getName()) > 0; break;
-                    case "changeDate": comparision = f1.getChangeDate().compareTo(f2.getChangeDate()) >0 ; break;
+                switch(searchOption){
+                    case Size: comparision = f1.getSize() > f2.getSize(); break;
+                    case Type: comparision = f1.getType().compareTo(f2.getType()) > 0; break;
+                    case Name: comparision = f1.getName().compareTo(f2.getName()) > 0; break;
+                    case Tags: comparision = f1.getTags().size() < f2.getTags().size(); break;
+                    case ChangeDate: comparision = f1.getChangeDate().compareTo(f2.getChangeDate()) >0 ; break;
                 }
                 if (comparision) {
                     DataFile temp = files.get(i);
@@ -126,6 +128,68 @@ public class FileManager {
         }
     }
 
+    public void loadThumbnailsInThread(List files, Callback callback) {
+        this.loadThumbnails = true;
+        List dataFiles = getDataFiles(files);
+        List<List<Object>> sublists = getSublists(dataFiles, THUMBNAIL_THREAD_AMOUNT);
+        for(List<Object> list: sublists) {
+            if(!loadThumbnails){
+                break;
+            }
+            new Thread(() -> {
+                for(Object o: list) {
+                    if(loadThumbnails){
+                        try {
+                            String path = createThumbnailPath((DataFile) o);
+                            //TODO BUG HERE DOES NOT UPDATE WHEN AN IMAGE ALREADY EXISTS
+                            createThumbnail((DataFile) o, path);
+                        }catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }else {
+                        break;
+                    }
+                }
+                callback.run("thumbnail", sublists.size());
+            }).start();
+        }
+    }
+
+    public void loadResolutionsInThread(List files, Callback callback) {
+        this.loadResolutions = true;
+        List dataFiles = getDataFiles(files);
+        List<List<Object>> sublists = getSublists(dataFiles, THUMBNAIL_THREAD_AMOUNT);
+        for(List<Object> list: sublists) {
+            if(!loadResolutions){
+                break;
+            }
+            new Thread(() -> {
+                for(Object o: list) {
+                    //System.out.println("loading res..");
+                    if(loadResolutions){
+                        DataFile df = (DataFile) o;
+                        try {
+                            String res = getResolution(df);
+                            if(!res.isEmpty()){
+                                String[] res2 = res.split("x");
+                                int width = Integer.parseInt(res2[0].trim());
+                                int height = Integer.parseInt(res2[1].trim());
+                                df.setWidth(width);
+                                df.setHeight(height);
+                                notifyObservers(df);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }else {
+                        break;
+                    }
+                }
+                callback.run("resolution", sublists.size());
+            }).start();
+        }
+    }
+
     /**
      * this method splits all files into a list of sublists with equally distributed files
      * for example: [1,2,3,4,5,6,7] -> [1,2], [3,4], [5,6], [7]
@@ -135,12 +199,15 @@ public class FileManager {
      * It is important to process as many files at a time as possible to reduce computational resources. (opening exiftool is expensive)
      * The threads then process all the files and extract the tags (Category or Subject) and adds them to the files tag field
      */
-    public void loadTagsInThread() {
+    public void loadTagsInThread(List files, Callback callback) {
         this.loadTags = true;
-        List<DataFile> files = getAllFiles();
-        List<List<Object>> listArr = getSublists(files, TAG_THREAD_AMOUNT);
+        List dataFiles = getDataFiles(files);
+        List<List<Object>> listArr = getSublists(dataFiles, TAG_THREAD_AMOUNT);
 
         for(int i = 0; i < listArr.size(); i++) {
+            if(!loadTags){
+                break;
+            }
             List li = listArr.get(i);
             if(li.size() > 0) {
                 new Thread(() -> {
@@ -188,10 +255,12 @@ public class FileManager {
                             }
                         }
                     }
+                    callback.run("tags", listArr.size());
                 }).start();
             }
         }
     }
+
 
     /**
      * gets the response of the exiftool containing the
@@ -211,8 +280,11 @@ public class FileManager {
      *
      * @param res the string from exiftool
      */
-    public void updateFiles(String res) {
+    public void updateFiles(String res) throws UnexpectedErrorException {
         res = res.trim();
+        if(res.isEmpty()){
+            throw new UnexpectedErrorException("Tags konnten nicht geladen werden\n(Vielleicht ungültiger Dateiname)");
+        }
         String[] lines = res.split("\n");
 
         for(int i = 0; i < lines.length; i+=2) {
@@ -261,6 +333,7 @@ public class FileManager {
                 n = 0;
             }
         }
+        all.removeIf(e -> e.isEmpty());
         return all;
     }
 
@@ -283,65 +356,86 @@ public class FileManager {
         this.files.clear();
     }
 
-    public List<DataFile> searchFiles(String text) {
-        ArrayList<DataFile> foundFiles = new ArrayList<>();
-        for(DataFile file: this.files) {
-            for(DataFile child: file.getChildren()){
-                if(child.getName().contains(text) || child.getName().toLowerCase().contains(text.toLowerCase())){
-                    foundFiles.add(child);
-                }
+    public List<DataFile> searchFiles(List<DataFile> files, String text) {
+
+        text = text.trim();
+        if(searchOption == null){
+            return null;
+        }
+
+        Set<String> words = new HashSet<>();
+        for(String s: text.replace(",", " ").split(" ")) {
+            s = s.trim();
+            if(!s.isEmpty()){
+                words.add(s);
             }
         }
-        return foundFiles;
-    }
 
-    public void loadThumbnailsInThread() {
-        this.loadThumbnails = true;
-        List<List<Object>> sublists = getSublists(getAllFiles(), THUMBNAIL_THREAD_AMOUNT);
-        for(List<Object> list: sublists) {
-            new Thread(() -> {
-                for(Object o: list) {
-                    if(loadThumbnails){
-                        try {
-                            String path = createThumbnailPath((DataFile) o);
-                            createThumbnail((DataFile) o, path);
-                        }catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }else {
-                        break;
-                    }
-                }
-            }).start();
+        switch (searchOption) {
+            case Name: return searchByName(files, words);
+            case Path: return searchByPath(files, words);
+            case Tags: return searchByTags(files, words);
+            default: return null;
         }
     }
 
-    public void loadResolutionsInThread() {
-        this.loadResolutions = true;
-        List<List<Object>> sublists = getSublists(getAllFiles(), THUMBNAIL_THREAD_AMOUNT);
-        for(List<Object> list: sublists) {
-            new Thread(() -> {
-                for(Object o: list) {
-                    //System.out.println("loading res..");
-                    if(loadResolutions){
-                        DataFile df = (DataFile) o;
-                        try {
-                            String res = getResolution(df);
-                            if(!res.isEmpty()){
-                                String[] res2 = res.split("x");
-                                int width = Integer.parseInt(res2[0].trim());
-                                int height = Integer.parseInt(res2[1].trim());
-                                df.setWidth(width);
-                                df.setHeight(height);
-                                notifyObservers(df);
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+    private List<DataFile> searchByTags(List<DataFile> files, Set<String> words) {
+        HashSet<DataFile> foundFiles = new HashSet<>();
+        for (DataFile file : files) {
+            childLoop:
+            for (DataFile child : file.getChildren()) {
+                for (String word : words) {
+                    if (!child.isInTags(word)) {
+                        continue childLoop;
                     }
                 }
-            }).start();
+                foundFiles.add(child);
+            }
         }
+        return new LinkedList<>(foundFiles);
+    }
+
+    private List<DataFile> searchByPath(List<DataFile> files, Set<String> words) {
+        HashSet<DataFile> foundFiles = new HashSet<>();
+        for (DataFile file : files) {
+            childLoop:
+            for (DataFile child : file.getChildren()) {
+                for (String word : words) {
+                    if (!(child.getPath().contains(word) || child.getPath().toLowerCase().contains(word.toLowerCase()))) {
+                        continue childLoop;
+                    }
+                }
+                foundFiles.add(child);
+            }
+        }
+        return new LinkedList<>(foundFiles);
+    }
+
+    private List<DataFile> searchByName(List<DataFile> files, Set<String> words){
+        HashSet<DataFile> foundFiles = new HashSet<>();
+        for(DataFile file: files){
+            childLoop:
+            for(DataFile child: file.getChildren()){
+                for(String word: words) {
+                    if(!(child.getName().contains(word) || child.getName().toLowerCase().contains(word.toLowerCase()))){
+                        continue childLoop;
+                    }
+                }
+                foundFiles.add(child);
+            }
+        }
+        return new LinkedList<>(foundFiles);
+    }
+
+    private List getDataFiles(List<File> files) {
+        ArrayList<DataFile> allFiles = new ArrayList();
+        for(File f: files) {
+            DataFile df = findFileByPath(f.getAbsolutePath());
+            if(df != null) {
+                allFiles.addAll(df.getChildren());
+            }
+        }
+        return allFiles;
     }
 
     public void clearThumbnails(String path) {
@@ -379,6 +473,15 @@ public class FileManager {
         this.loadTags = false;
         this.loadThumbnails = false;
         this.loadResolutions = false;
+    }
+
+
+    public SearchOption getSearchOption() {
+        return searchOption;
+    }
+
+    public void setSearchOption(SearchOption searchOption) {
+        this.searchOption = searchOption;
     }
 
 

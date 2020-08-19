@@ -25,8 +25,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
+import javafx.util.Duration;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
@@ -224,7 +226,7 @@ public class FilePropertyController implements Initializable {
                                 hideThumbnailLoadingSpinner();
                                 this.thumbnail.setImage(img);
                                 String mimetype = FileManager.getDataFileMimeType(f);
-                                if (mimetype != null && mimetype.startsWith("video")) {
+                                if (mimetype != null && mimetype.equals("video/mp4")) {
                                     this.playIcon.setVisible(true);
                                 }
                             });
@@ -242,7 +244,6 @@ public class FilePropertyController implements Initializable {
                     }
                 });
             }
-
         }catch (Exception e) {
             e.printStackTrace();
         }
@@ -362,6 +363,7 @@ public class FilePropertyController implements Initializable {
 
     private void updatePathValueLabel(DataFile f) {
         Tooltip tooltip = new Tooltip();
+        tooltip.setShowDelay(new Duration(200));
         tooltip.setText(f.getPath());
         pathLabelValue.setTooltip(tooltip);
         pathLabelValue.setText(f.getPath());
@@ -468,7 +470,7 @@ public class FilePropertyController implements Initializable {
                             tooltip.setText(e.getMessage());
                             textfield.setTooltip(tooltip);
                         } catch (UnexpectedErrorException e) {
-                            showError(e.getMessage());
+                            this.mainScreenController.showError(e.getMessage());
                         }
                     }else {
                         hideNameEdit();
@@ -492,7 +494,6 @@ public class FilePropertyController implements Initializable {
 
             showTagsLoadingSpinner();
 
-
             executor.submit(() -> {
                 try{
                     String cmd = FileManager.getResourcePath(getClass(), "exiftool", "exiftool.exe");
@@ -506,7 +507,9 @@ public class FilePropertyController implements Initializable {
                         removeTagsLoadingSpinner();
                         createTags(f);
                     });
-                }catch (Exception e){
+                }catch (UnexpectedErrorException e){
+                    this.mainScreenController.showError(e.getMessage());
+                } catch (InterruptedException | IOException e) {
                     e.printStackTrace();
                 }
             });
@@ -558,14 +561,6 @@ public class FilePropertyController implements Initializable {
             stack.getChildren().add(l);
             this.fileTagsBox.getChildren().add(l);
         }
-    }
-
-    private void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error Dialog");
-        alert.setHeaderText("Error occured");
-        alert.setContentText(message);
-        alert.showAndWait();
     }
 
     public void playVideo(MouseEvent mouseEvent) {

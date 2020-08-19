@@ -1,7 +1,7 @@
 package frontend.controllers;
 
 import backend.FileManager;
-import backend.FileObserver;
+import backend.SearchOption;
 import backend.data.DataFile;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -18,14 +18,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class FileListController implements Initializable {
 
     private MainScreenController mainScreenController;
 
+    @FXML public SplitMenuButton searchByButton;
+    @FXML public TextField searchField;
+    @FXML public SplitMenuButton sortMenuButton;
     @FXML public ListView fileList;
     @FXML public Label filesAmountLabel;
     @FXML public Label filesTotalSizeLabel;
@@ -34,7 +35,7 @@ public class FileListController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 //        FileManager.getInstance().addObserver(this);
-
+        this.searchByButton.setText("Suchen nach ("+ FileManager.getInstance().getSearchOption().toString()+")");
         this.fileList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
         fileList.setOnDragOver(event -> {
@@ -85,17 +86,27 @@ public class FileListController implements Initializable {
         }
     }
 
+    public void updateView(Set<DataFile> files) {
+        if(files != null){
+            updateView(new LinkedList<>(files));
+        }
+    }
+
     public void updateView(List<DataFile> files) {
         int fileAmt = 0;
         long totalSize = 0;
         fileList.getItems().clear();
-        for (DataFile df : files) {
-            if (!df.getType().isEmpty()) {
-                fileList.getItems().add(createListItem(df));
-                fileAmt++;
-                totalSize += df.getSize();
+
+        if(files != null){
+            for (DataFile df : files) {
+                if (!df.getType().isEmpty()) {
+                    fileList.getItems().add(createListItem(df));
+                    fileAmt++;
+                    totalSize += df.getSize();
+                }
             }
         }
+
         this.filesAmountLabel.setText(Integer.toString(fileAmt));
         String size = DataFile.getFormattedSize(totalSize);
         if(size != null){
@@ -103,7 +114,6 @@ public class FileListController implements Initializable {
         }else {
             this.filesTotalSizeLabel.setText("");
         }
-
     }
 
     public void updateView(String path) {
@@ -183,39 +193,68 @@ public class FileListController implements Initializable {
         }
     }
 
-
     public void orderBySizeClicked(ActionEvent actionEvent) {
+        this.sortMenuButton.setText("Sortieren nach (Größe)");
         FileManager fileManager = FileManager.getInstance();
         if(fileManager.getAllFiles() != null) {
             List files = fileManager.getAllFiles();
-            fileManager.sort(files, "size");
+            if(!this.searchField.getText().isEmpty()){
+                files = fileManager.searchFiles(files, this.searchField.getText());
+            }
+            fileManager.sort(files, SearchOption.Size);
             updateView(files);
         }
     }
 
     public void orderByTypeClicked(ActionEvent actionEvent) {
+        this.sortMenuButton.setText("Sortieren nach (Typ)");
         FileManager fileManager = FileManager.getInstance();
         if(fileManager.getAllFiles() != null) {
             List files = fileManager.getAllFiles();
-            fileManager.sort(files, "type");
+            if(!this.searchField.getText().isEmpty()){
+                files = fileManager.searchFiles(files, this.searchField.getText());
+            }
+            fileManager.sort(files, SearchOption.Type);
             updateView(files);
         }
     }
 
     public void orderByNameClicked(ActionEvent actionEvent) {
+        this.sortMenuButton.setText("Sortieren nach (Name)");
         FileManager fileManager = FileManager.getInstance();
         if(fileManager.getAllFiles() != null) {
             List files = fileManager.getAllFiles();
-            fileManager.sort(files, "name");
+            if(!this.searchField.getText().isEmpty()){
+                files = fileManager.searchFiles(files, this.searchField.getText());
+            }
+            fileManager.sort(files, SearchOption.Name);
+            updateView(files);
+        }
+    }
+
+
+    public void orderByTagsClicked(ActionEvent actionEvent) {
+        this.sortMenuButton.setText("Sortieren nach (Tags)");
+        FileManager fileManager = FileManager.getInstance();
+        if(fileManager.getAllFiles() != null) {
+            List files = fileManager.getAllFiles();
+            if(!this.searchField.getText().isEmpty()){
+                files = fileManager.searchFiles(files, this.searchField.getText());
+            }
+            fileManager.sort(files, SearchOption.Tags);
             updateView(files);
         }
     }
 
     public void orderByDateClicked(ActionEvent actionEvent) {
+        this.sortMenuButton.setText("Sortieren nach (Datum)");
         FileManager fileManager = FileManager.getInstance();
         if(fileManager.getAllFiles() != null) {
             List files = fileManager.getAllFiles();
-            fileManager.sort(files, "changeDate");
+            if(!this.searchField.getText().isEmpty()){
+                files = fileManager.searchFiles(files, this.searchField.getText());
+            }
+            fileManager.sort(files, SearchOption.ChangeDate);
             updateView(files);
         }
     }
@@ -228,18 +267,41 @@ public class FileListController implements Initializable {
         updateView(fileManager.getAllFiles());
     }
 
-    public void searchFiles(KeyEvent keyEvent) {
-        TextField src = (TextField) keyEvent.getSource();
-        if(!src.getText().isEmpty()){
-            ArrayList<DataFile> found = (ArrayList<DataFile>) FileManager.getInstance().searchFiles(src.getText());
+    public void setMainScreenController(MainScreenController controller) {
+        this.mainScreenController = controller;
+    }
+
+    public void searchFiles() {
+        if(!this.searchField.getText().isEmpty()){
+            List<DataFile> found = FileManager.getInstance().searchFiles(FileManager.getInstance().getAllFiles(), this.searchField.getText());
             updateView(found);
         }else {
             updateView(FileManager.getInstance().getAllFiles());
         }
     }
 
-    public void setMainScreenController(MainScreenController controller) {
-        this.mainScreenController = controller;
+    public void searchByNameClicked(ActionEvent actionEvent) {
+        FileManager.getInstance().setSearchOption(SearchOption.Name);
+        this.searchByButton.setText("Suchen nach ("+ FileManager.getInstance().getSearchOption().toString()+")");
+        if(!this.searchField.getText().isEmpty()){
+            searchFiles();
+        }
+    }
+
+    public void searchByPathClicked(ActionEvent actionEvent) {
+        FileManager.getInstance().setSearchOption(SearchOption.Path);
+        this.searchByButton.setText("Suchen nach ("+ FileManager.getInstance().getSearchOption().toString()+")");
+        if(!this.searchField.getText().isEmpty()){
+            searchFiles();
+        }
+    }
+
+    public void searchByTagsClicked(ActionEvent actionEvent) {
+        FileManager.getInstance().setSearchOption(SearchOption.Tags);
+        this.searchByButton.setText("Suchen nach ("+ FileManager.getInstance().getSearchOption().toString()+")");
+        if(!this.searchField.getText().isEmpty()){
+            searchFiles();
+        }
     }
 
 }

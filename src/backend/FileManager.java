@@ -7,18 +7,18 @@ import javafx.scene.image.Image;
 
 import java.awt.*;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FileManager {
 
-    private static final int THUMBNAIL_THREAD_AMOUNT = 9;
-    private static final int TAG_THREAD_AMOUNT = 9;
+    private static final int THUMBNAIL_THREAD_AMOUNT = 10;
+    private static final int TAG_THREAD_AMOUNT = 10;
     private static final int EXIF_MAX_FILES_FOR_CMD = 20;
 
-    private final LinkedList<FileObserver> observers;
     private static FileManager instance;
     private final ArrayList<DataFile> files;
 
@@ -27,19 +27,17 @@ public class FileManager {
     private boolean loadResolutions;
     private SearchOption searchOption;
 
+    private SortedSet<String> presetTags;
+    private ArrayList<TagObserver> tagObservers;
+
     public FileManager() {
         this.files = new ArrayList<>();
-        this.observers = new LinkedList<>();
+        this.tagObservers = new ArrayList<>();
+        this.presetTags = new TreeSet<>(Comparator.comparing(String::toLowerCase));
         this.loadThumbnails = true;
         this.loadTags = true;
         this.loadResolutions = true;
         searchOption = SearchOption.Name; //default
-    }
-
-    public void notifyObservers(DataFile file) {
-        for(FileObserver o: observers){
-            o.onFileUpdate(file);
-        }
     }
 
     public static FileManager getInstance() {
@@ -185,7 +183,6 @@ public class FileManager {
                                 int height = Integer.parseInt(res2[1].trim());
                                 df.setWidth(width);
                                 df.setHeight(height);
-                                notifyObservers(df);
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -228,7 +225,7 @@ public class FileManager {
             if(li.size() > 0) {
                 new Thread(() -> {
                     String cmd = getResourcePath(getClass(), "exiftool", "exiftool.exe");
-                    cmd += " -L -S -m -q -fast2 -fileName -directory -category -XMP:Subject ";
+                    cmd += " -L -S -m -q -fast2 -fileName -directory -category ";
 
                     boolean addedFile = false;
                     LinkedList<String> filePaths = new LinkedList<>();
@@ -282,7 +279,6 @@ public class FileManager {
         }
     }
 
-
     /**
      * gets the response of the exiftool containing the
      * name of the files, directory and the tags (if the file has)
@@ -307,7 +303,6 @@ public class FileManager {
             throw new UnexpectedErrorException("Tags konnten nicht geladen werden\n(Vielleicht ungültiger Dateiname)");
         }
         String[] lines = res.split("\n");
-
         for(int i = 0; i < lines.length; i+=2) {
             String name = lines[i].split(": ")[1].strip();
             String dir = lines[i+1].split(": ")[1].strip();
@@ -328,7 +323,6 @@ public class FileManager {
             }
             if(file != null) {
                 file.setTagsLoaded(true);
-                notifyObservers(file);
             }
         }
     }
@@ -482,14 +476,6 @@ public class FileManager {
         }
     }
 
-    public void removeObserver(FileObserver fo){
-        this.observers.remove(fo);
-    }
-
-    public void addObserver(FileObserver fo){
-        this.observers.add(fo);
-    }
-
     public void stopAllBackgroundThreads(){
         this.loadTags = false;
         this.loadThumbnails = false;
@@ -517,7 +503,7 @@ public class FileManager {
         return new Image(new File(outpath).toURI().toString());
     }
 
-    public static Image createVideoThumbnail(DataFile f, String outpath) throws InterruptedException, IOException {
+    public static Image createVideoThumbnail(DataFile f, String outpath) throws InterruptedException, IOException, UnexpectedErrorException {
         //get duration of video
         String ffprobeCmd = "ffprobe -i \"" + f.getPath() + "\" -show_entries format=duration -v quiet -of csv=\"p=0\"";
         Process p = Runtime.getRuntime().exec(ffprobeCmd);
@@ -530,8 +516,7 @@ public class FileManager {
             output = Integer.parseInt(s.split("\\.")[0]);
             output = output / 2;
         }catch (Exception e){
-            e.printStackTrace();
-            System.out.println("FEHLER AUFGETRETEN: "+s.split("\\.")[0]);
+            throw new UnexpectedErrorException("Fehler aufgetreten beim erstellen des Thumbnails");
         }
         if(!new File(outpath).exists()){
             String screenshotCmd = "ffmpeg -ss " + output + " -i \"" + f.getPath() + "\" -n -frames:v 1 -vf scale=320:-1 \"" + outpath+"\"";
@@ -553,7 +538,7 @@ public class FileManager {
         return FileManager.getResourcePath(FileManager.class, "thumbnails", newName+".jpg");
     }
 
-    public static Image createThumbnail(DataFile f, String outpath) throws IOException, InterruptedException {
+    public static Image createThumbnail(DataFile f, String outpath) throws IOException, InterruptedException, UnexpectedErrorException {
         String mimetype = FileManager.getDataFileMimeType(f);
         if(mimetype != null) {
             String[] mimetypeSplit = mimetype.split("/");
@@ -627,4 +612,40 @@ public class FileManager {
         return new String(p.getInputStream().readAllBytes());
 }
 
+    public void loadPresetTags(File file) throws FileNotFoundException {
+        Scanner reader = new Scanner(file);
+        String data = "";
+        while (reader.hasNextLine()) {
+            data += reader.nextLine();
+        }
+
+        if(!data.isEmpty()){
+            String[] tags = data.split(",");
+            this.presetTags.addAll(Arrays.asList(tags));
+            notifyTagObservers();
+        }
+    }
+
+    private void notifyTagObservers() {
+        for(TagObserver tagObserver: this.tagObservers){
+            tagObserver.notify(this.presetTags);
+        }
+    }
+
+    public void addTagObserver(TagObserver o){
+        this.tagObservers.add(o);
+    }
+
+    public void removeTagObserver(TagObserver o){
+        this.tagObservers.remove(o);
+    }
+
+    public boolean addTagToPreset(String tagText) {
+        if(!presetTags.contains(tagText)){
+            presetTags.add(tagText);
+            notifyTagObservers();
+            return true;
+        }
+        return false;
+    }
 }

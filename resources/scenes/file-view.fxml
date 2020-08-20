@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox prefHeight="500" prefWidth="600.0" style="-fx-background-color: -fx-primary-grey;" stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="frontend.controllers.FileListController">
+<VBox prefHeight="500" prefWidth="600.0" style="-fx-background-color: -fx-primary-grey;" stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/" xmlns:fx="http://javafx.com/fxml/" fx:controller="frontend.controllers.FileListController">
    <children>
       <StackPane>
          <children>
@@ -36,7 +36,7 @@
             </HBox>
             <HBox alignment="CENTER_LEFT" spacing="20.0" VBox.vgrow="ALWAYS">
                <children>
-                  <SplitMenuButton fx:id="sortMenuButton" contentDisplay="RIGHT" minWidth="124.0" mnemonicParsing="false" popupSide="TOP" text="Sortieren nach">
+                  <SplitMenuButton fx:id="sortMenuButton" contentDisplay="RIGHT" minWidth="125.0" mnemonicParsing="false" popupSide="TOP" text="Sortieren nach">
                      <items>
                         <MenuItem mnemonicParsing="false" onAction="#orderBySizeClicked" text="Größe" />
                         <MenuItem mnemonicParsing="false" onAction="#orderByTypeClicked" text="Typ" />
@@ -47,19 +47,19 @@
                   </SplitMenuButton>
                   <HBox alignment="CENTER_RIGHT" prefHeight="29.0" prefWidth="419.0" spacing="10.0">
                      <children>
-                        <TextField fx:id="searchField" maxHeight="20.0" minHeight="20.0" onKeyTyped="#searchFiles" prefHeight="20.0" prefWidth="224.0" promptText="Suchen...">
+                        <TextField fx:id="searchField" maxHeight="20.0" minHeight="20.0" minWidth="100.0" onKeyTyped="#searchFiles" prefHeight="20.0" prefWidth="224.0" promptText="Suchen...">
                            <HBox.margin>
                               <Insets />
                            </HBox.margin>
                         </TextField>
-                        <SplitMenuButton fx:id="searchByButton" contentDisplay="RIGHT" mnemonicParsing="false" popupSide="TOP" prefHeight="29.0" text="Suchen nach">
+                        <SplitMenuButton fx:id="searchByButton" contentDisplay="RIGHT" minWidth="125.0" mnemonicParsing="false" popupSide="TOP" prefHeight="29.0" prefWidth="100.0" text="Suchen nach">
                           <items>
                             <MenuItem mnemonicParsing="false" onAction="#searchByNameClicked" text="Name" />
                             <MenuItem mnemonicParsing="false" onAction="#searchByPathClicked" text="Pfad" />
                               <MenuItem mnemonicParsing="false" onAction="#searchByTagsClicked" text="Tags" />
                           </items>
                         </SplitMenuButton>
-                        <Button mnemonicParsing="false" onAction="#clearListClicked" prefHeight="29.0" text="Clear List">
+                        <Button minWidth="62.0" mnemonicParsing="false" onAction="#clearListClicked" prefHeight="29.0" prefWidth="62.0" text="Clear List">
                            <HBox.margin>
                               <Insets />
                            </HBox.margin>

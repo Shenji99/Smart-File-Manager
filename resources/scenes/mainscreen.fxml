@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 
-<BorderPane stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="frontend.controllers.MainScreenController">
+<BorderPane stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/" xmlns:fx="http://javafx.com/fxml/" fx:controller="frontend.controllers.MainScreenController">
    <center>
       <SplitPane fx:id="contentPane" prefHeight="652.0" prefWidth="941.0" styleClass="primary-grey-bg" BorderPane.alignment="CENTER" />
    </center>
@@ -20,6 +20,7 @@
             <items>
               <MenuItem mnemonicParsing="false" onAction="#loadFiles" text="Dateien öffnen" />
                   <MenuItem mnemonicParsing="false" onAction="#loadDirectory" text="Ordner öffnen" />
+                  <MenuItem mnemonicParsing="false" onAction="#loadTagsFromFile" text="Tags laden" />
                   <MenuItem mnemonicParsing="false" onAction="#closeApp" text="Close" />
             </items>
           </Menu>

@@ -25,6 +25,7 @@
 	-fx-padding: 5px;
 	-fx-background-color: -fx-primary-purple;
 	-fx-border-radius: 100 100 10 10;
+	-fx-opacity: 1.0;
 }
 
 .dark-background {
@@ -131,6 +132,11 @@
 }
 
 
+.green-background {
+	-fx-background-color: seagreen;
+}
+
+
 /***********************************************************
 						MENU
 ***********************************************************/
@@ -200,6 +206,16 @@
     -fx-text-fill: -fx-primary-purple;
 }
 
+/***********************************************************
+						SCROLL PANE
+***********************************************************/
+.scroll-pane{
+   -fx-background-color:transparent;
+}
+
+.scroll-pane > .viewport {  //not .scrollpane but .scroll-pane
+   -fx-background-color: transparent;
+}
 
 
 

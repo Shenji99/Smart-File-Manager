@@ -10,15 +10,15 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.*;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -28,11 +28,10 @@ import javafx.scene.media.MediaView;
 import javafx.util.Duration;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -62,9 +61,15 @@ public class FilePropertyController implements Initializable {
     @FXML public Label typeLabelValue;
     @FXML public Label changeDateLabel;
 
-    @FXML public HBox fileTagsBox;
+    @FXML public FlowPane fileTagsBox;
+    @FXML public FlowPane presetTagsContainer;
     @FXML public VBox propertiesWrapper;
 
+    @FXML public TextField addTagTextField;
+    @FXML public Button addTagsButton;
+    @FXML public Button deletePresetTagsButton;
+    @FXML public Button abortTagsAddingButton;
+    @FXML public Button saveTagsPreset;
 
     private InvalidationListener videoSliderListener;
     private InvalidationListener volumeSliderListener;
@@ -72,10 +77,14 @@ public class FilePropertyController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-//        FileManager.getInstance().addObserver(this);
+
+        FileManager.getInstance().addTagObserver(tags -> this.updatePresetTagList(tags));
 
         this.widthHeightLabel.setVisible(false);
         this.widthHeightLabelValue.setVisible(false);
+
+        this.abortTagsAddingButton.setVisible(false);
+        this.saveTagsPreset.setVisible(false);
 
         this.controlsWrapper.setPrefWidth(this.mediaView.getFitWidth());
         this.controlsWrapper.setMaxWidth(this.mediaView.getFitWidth());
@@ -481,15 +490,18 @@ public class FilePropertyController implements Initializable {
     }
 
     public void filePropertiesPaneClicked(MouseEvent event) {
-        if(event.getTarget() != this.nameLabelValue){
+        if(event.getTarget() != this.nameLabelValue) {
             hideNameEdit();
+        }
+        if(event.getTarget() != this.addTagTextField) {
+            this.addTagTextField.getStyleClass().remove("error-border");
         }
     }
 
     private void updateTags(DataFile f) {
         this.fileTagsBox.getChildren().clear();
         if(f.isTagsLoaded()){
-            createTags(f);
+            setTagsOfFile(f);
         }else {
 
             showTagsLoadingSpinner();
@@ -497,7 +509,7 @@ public class FilePropertyController implements Initializable {
             executor.submit(() -> {
                 try{
                     String cmd = FileManager.getResourcePath(getClass(), "exiftool", "exiftool.exe");
-                        cmd += " -L -S -m -q -fast2 -fileName -directory -category -XMP:Subject ";
+                        cmd += " -L -S -m -q -fast2 -fileName -directory -category ";
                         cmd += "\"" + f.getPath() +"\"";
                     Process p = Runtime.getRuntime().exec(cmd);
                     p.waitFor();
@@ -505,7 +517,7 @@ public class FilePropertyController implements Initializable {
                     FileManager.getInstance().updateFiles(res);
                     Platform.runLater(() -> {
                         removeTagsLoadingSpinner();
-                        createTags(f);
+                        setTagsOfFile(f);
                     });
                 }catch (UnexpectedErrorException e){
                     this.mainScreenController.showError(e.getMessage());
@@ -550,17 +562,22 @@ public class FilePropertyController implements Initializable {
         }
     }
 
-    private void createTags(DataFile f) {
+    private void setTagsOfFile(DataFile f) {
         List<String> tags = f.getTags();
         for(String tag: tags){
-            StackPane stack = new StackPane();
-            Label l = new Label(tag);
-            l.setAlignment(Pos.CENTER);
-            l.getStyleClass().add("tag");
-
-            stack.getChildren().add(l);
-            this.fileTagsBox.getChildren().add(l);
+           this.fileTagsBox.getChildren().add(createTagNode(tag));
         }
+    }
+
+    public Node createTagNode(String text){
+        StackPane stackpane = new StackPane();
+        Label l = new Label(text);
+        stackpane.getChildren().add(l);
+        FlowPane.setMargin(stackpane, new Insets(3));
+        l.setPadding(new Insets(3));
+        l.setAlignment(Pos.CENTER);
+        stackpane.getStyleClass().add("tag");
+        return stackpane;
     }
 
     public void playVideo(MouseEvent mouseEvent) {
@@ -645,6 +662,14 @@ public class FilePropertyController implements Initializable {
         this.pauseVideoButton.setVisible(b);
     }
 
+
+    private void updatePresetTagList(Set<String> tags) {
+        this.presetTagsContainer.getChildren().clear();
+        for(String tag: tags){
+           this.presetTagsContainer.getChildren().add(createTagNode(tag));
+        }
+    }
+
     public Label getNameLabel() {
         return this.nameLabelValue;
     }
@@ -658,4 +683,89 @@ public class FilePropertyController implements Initializable {
     }
 
 
+    public void addTagToPreset(ActionEvent actionEvent) {
+        String tagText = this.addTagTextField.getText();
+        if(!tagText.isEmpty()){
+            if(FileManager.getInstance().addTagToPreset(tagText)) {
+                this.addTagTextField.getStyleClass().remove("error-border");
+                this.addTagTextField.clear();
+            }else {
+                this.mainScreenController.showError("Tag existiert bereits");
+                this.addTagTextField.getStyleClass().add("error-border");
+            }
+        }
+    }
+
+    public void removeErrorBorder(Node n){
+        n.getStyleClass().remove("error-border");
+    }
+
+    public void removeErrorBorder(KeyEvent keyEvent) {
+        this.removeErrorBorder(this.addTagTextField);
+    }
+
+    private HashSet<String> selectedTags;
+    public void addTagsToFile(ActionEvent actionEvent) {
+        selectedTags = new HashSet<String>();
+
+        this.addTagsButton.setVisible(false);
+        this.deletePresetTagsButton.setVisible(false);
+
+        this.abortTagsAddingButton.setVisible(true);
+        this.saveTagsPreset.setVisible(true);
+
+        for(Node n: this.presetTagsContainer.getChildren()) {
+            Label l = (Label) ((StackPane)n).getChildren().get(0);
+            n.getStyleClass().add("green-background");
+            n.setCursor(Cursor.HAND);
+            n.setOnMouseClicked(mouseEvent -> {
+                String text = l.getText();
+                this.selectedTags.add(text);
+                n.setDisable(true);
+                Node tagNode = createTagNode(text);
+                tagNode.setId("presetEditTag");
+                tagNode.getStyleClass().add("green-background");
+                tagNode.setCursor(Cursor.HAND);
+                addToFileTagsBox(tagNode, n);
+            });
+        }
+    }
+
+    private void addToFileTagsBox(Node n, Node reference) {
+        this.fileTagsBox.getChildren().add(n);
+        n.setOnMouseClicked(mouseEvent -> {
+            this.fileTagsBox.getChildren().remove(n);
+            reference.setDisable(false);
+        });
+    }
+
+    public void saveTagsPresetClicked(ActionEvent actionEvent) {
+
+    }
+
+    public void abortTagsAddingButtonClicked(ActionEvent actionEvent) {
+        try{
+            if(selectedTags != null){
+                selectedTags.clear();
+            }
+
+            this.addTagsButton.setVisible(true);
+            this.deletePresetTagsButton.setVisible(true);
+            this.abortTagsAddingButton.setVisible(false);
+            this.saveTagsPreset.setVisible(false);
+
+            this.fileTagsBox.getChildren().removeIf(n -> n.getId() != null && n.getId().equals("presetEditTag"));
+
+
+            this.presetTagsContainer.setDisable(false);
+            this.presetTagsContainer.getChildren().forEach(n -> {
+                n.setCursor(Cursor.DEFAULT);
+                n.setOnMouseClicked(null);
+                n.getStyleClass().remove("green-background");
+                n.setDisable(false);
+            });
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 }

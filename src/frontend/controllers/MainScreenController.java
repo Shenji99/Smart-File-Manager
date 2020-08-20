@@ -29,8 +29,10 @@ import java.util.ResourceBundle;
 public class MainScreenController implements Initializable {
 
 
-    @FXML public SplitPane contentPane;
-    @FXML public Label appStatusLabel;
+    @FXML
+    public SplitPane contentPane;
+    @FXML
+    public Label appStatusLabel;
     private FileManager fileManager;
 
     private FileListController fileListController;
@@ -60,17 +62,17 @@ public class MainScreenController implements Initializable {
 
         this.fileListController.setListViewLoadingSpinner(true);
 
-        if(files != null) {
+        if (files != null) {
             loadFilesInThread(files);
         }
     }
 
 
-    public void loadDirectory(ActionEvent actionEvent){
+    public void loadDirectory(ActionEvent actionEvent) {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Ordner auswählen");
         File dir = directoryChooser.showDialog(this.stage);
-        if(dir != null) {
+        if (dir != null) {
             loadFilesInThread(dir);
         }
     }
@@ -110,7 +112,7 @@ public class MainScreenController implements Initializable {
 
         //what happens if a task is finished (callback)
         tm.addTaskObserver(task -> {
-            synchronized (this){
+            synchronized (this) {
                 updateStatus();
             }
         });
@@ -151,18 +153,18 @@ public class MainScreenController implements Initializable {
     }
 
     private void showStatusLoading(int taskAmount) {
-        this.appStatusLabel.setText("Loading "+taskAmount+" Tasks...");
+        this.appStatusLabel.setText("Loading " + taskAmount + " Tasks...");
         HBox parent = (HBox) this.appStatusLabel.getParent();
         parent.setVisible(true);
         ImageView spinner = null;
-        for(Node n: parent.getChildren()){
-            if(n instanceof ImageView && n.getId() != null && n.getId().equals("spinner")){
+        for (Node n : parent.getChildren()) {
+            if (n instanceof ImageView && n.getId() != null && n.getId().equals("spinner")) {
                 spinner = (ImageView) n;
                 break;
             }
         }
-        if(spinner == null){
-            spinner = createLodingSpinner(20,20);
+        if (spinner == null) {
+            spinner = createLodingSpinner(20, 20);
             spinner.setId("spinner");
             parent.getChildren().add(spinner);
         }
@@ -175,18 +177,18 @@ public class MainScreenController implements Initializable {
         try {
             Platform.runLater(() -> {
                 String[] statustext = appStatusLabel.getText().split(" ");
-                if(statustext.length == 3){
-                    int remainingTasks = Integer.parseInt(statustext[1])-1;
+                if (statustext.length == 3) {
+                    int remainingTasks = Integer.parseInt(statustext[1]) - 1;
                     statustext[1] = Integer.toString(remainingTasks);
-                    if(remainingTasks == 0){
+                    if (remainingTasks == 0) {
                         appStatusLabel.setText("");
                         appStatusLabel.getParent().setVisible(false);
-                    }else {
+                    } else {
                         appStatusLabel.setText(String.join(" ", statustext));
                     }
                 }
             });
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -196,7 +198,7 @@ public class MainScreenController implements Initializable {
         spinnerIv.setFitWidth(width);
         spinnerIv.setFitHeight(height);
         String pth = FileManager.getResourcePath(getClass(), "images", "spinner2.gif");
-        Image spinner = new Image("file:/"+pth);
+        Image spinner = new Image("file:/" + pth);
         spinnerIv.setImage(spinner);
         return spinnerIv;
     }
@@ -223,7 +225,7 @@ public class MainScreenController implements Initializable {
     }
 
     public void showError(String message) {
-        try{
+        try {
             Platform.runLater(() -> {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error Dialog");
@@ -231,13 +233,27 @@ public class MainScreenController implements Initializable {
                 alert.setContentText(message);
                 alert.showAndWait();
             });
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public SplitPane getContentPane(){
+    public SplitPane getContentPane() {
         return this.contentPane;
+    }
+
+    public void loadTagsFromFile(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Tagliste auswählen (CSV)");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV", "*.csv"));
+        File file = fileChooser.showOpenDialog(this.stage);
+        if (file != null) {
+            try {
+                fileManager.loadPresetTags(file);
+            } catch (Exception e) {
+                showError(e.getMessage());
+            }
+        }
     }
 
 }

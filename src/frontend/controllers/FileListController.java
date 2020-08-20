@@ -3,6 +3,7 @@ package frontend.controllers;
 import backend.FileManager;
 import backend.SearchOption;
 import backend.data.DataFile;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -19,6 +20,8 @@ import javafx.scene.layout.StackPane;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class FileListController implements Initializable {
 
@@ -31,10 +34,12 @@ public class FileListController implements Initializable {
     @FXML public Label filesAmountLabel;
     @FXML public Label filesTotalSizeLabel;
 
+    private ThreadPoolExecutor executor;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 //        FileManager.getInstance().addObserver(this);
+        this.executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
         this.searchByButton.setText("Suchen nach ("+ FileManager.getInstance().getSearchOption().toString()+")");
         this.fileList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
@@ -273,10 +278,18 @@ public class FileListController implements Initializable {
 
     public void searchFiles() {
         if(!this.searchField.getText().isEmpty()){
-            List<DataFile> found = FileManager.getInstance().searchFiles(FileManager.getInstance().getAllFiles(), this.searchField.getText());
-            updateView(found);
+            executor.submit(() -> {
+                Platform.runLater(() -> setListViewLoadingSpinner(true));
+                List<DataFile> found = FileManager.getInstance().searchFiles(FileManager.getInstance().getAllFiles(), this.searchField.getText());
+                Platform.runLater(() -> {
+                   updateView(found);
+                    setListViewLoadingSpinner(false);
+                });
+            });
         }else {
+            setListViewLoadingSpinner(true);
             updateView(FileManager.getInstance().getAllFiles());
+            setListViewLoadingSpinner(false);
         }
     }
 

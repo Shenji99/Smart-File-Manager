@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 public class TaskManager {
 
-    public ArrayList<Task> tasks;
-    public ArrayList<TaskObserver> observers;
+    private ArrayList<Task> tasks;
+    private ArrayList<TaskObserver> observers;
 
     public TaskManager() {
         this.tasks = new ArrayList<>();

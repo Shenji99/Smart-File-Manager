@@ -108,14 +108,17 @@ public class MainScreenController implements Initializable {
 
         TaskManager tm = new TaskManager();
 
-        //what happens if a task is finished
+        //what happens if a task is finished (callback)
         tm.addTaskObserver(task -> {
-            updateStatus();
+            synchronized (this){
+                updateStatus();
+            }
         });
 
         tm.addTask(new Task(new TaskRunnable() {
             @Override
             public void run(Callback callback) {
+                //run callback when finished
                 fileManager.loadThumbnailsInThread(files, callback);
             }
         }));
@@ -123,6 +126,7 @@ public class MainScreenController implements Initializable {
         tm.addTask(new Task(new TaskRunnable() {
             @Override
             public void run(Callback callback) {
+                //run callback when finished
                 fileManager.loadResolutionsInThread(files, callback);
             }
         }));
@@ -130,6 +134,7 @@ public class MainScreenController implements Initializable {
         tm.addTask(new Task(new TaskRunnable() {
             @Override
             public void run(Callback callback) {
+                //run callback when finished
                 fileManager.loadTagsInThread(files, callback);
             }
         }));
@@ -137,10 +142,8 @@ public class MainScreenController implements Initializable {
         Platform.runLater(() -> {
             showStatusLoading(tm.getTasksSize());
             this.fileListController.setListViewLoadingSpinner(false);
-
             //updates the view with the current settings (includes the newly imported files)
             this.fileListController.searchFiles();
-            this.fileListController.setListViewLoadingSpinner(false);
         });
 
         tm.startAllTasks();

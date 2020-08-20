@@ -14,8 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class FileManager {
 
-    private static final int THUMBNAIL_THREAD_AMOUNT = 7;
-    private static final int TAG_THREAD_AMOUNT = 7;
+    private static final int THUMBNAIL_THREAD_AMOUNT = 9;
+    private static final int TAG_THREAD_AMOUNT = 9;
     private static final int EXIF_MAX_FILES_FOR_CMD = 20;
 
     private final LinkedList<FileObserver> observers;
@@ -153,8 +153,10 @@ public class FileManager {
                         break;
                     }
                 }
+                //if all threads are finished run the callback method
                 int val = finishedThreads.incrementAndGet();
                 if(val == sublists.size()){
+                    //System.out.println("finished loading thumbnails");
                     callback.run();
                 }
             }).start();
@@ -192,8 +194,10 @@ public class FileManager {
                         break;
                     }
                 }
+                //if all threads are finished run the callback method
                 int val = finishedThreads.incrementAndGet();
                 if(val == sublists.size()){
+                    //System.out.println("finished loading resolutions");
                     callback.run();
                 }
             }).start();
@@ -267,8 +271,10 @@ public class FileManager {
                             }
                         }
                     }
+                    //if all threads are finished run the callback method
                     int val = finishedThreads.incrementAndGet();
                     if(val == listArr.size()){
+                        //System.out.println("finished loading tags");
                         callback.run();
                     }
                 }).start();

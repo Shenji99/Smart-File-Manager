@@ -3,7 +3,9 @@ package frontend.controllers;
 import backend.FileManager;
 import backend.data.DataFile;
 import backend.exceptions.InvalidFileNameException;
+import backend.exceptions.InvalidNameException;
 import backend.exceptions.UnexpectedErrorException;
+import backend.tasks.Callback;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.event.ActionEvent;
@@ -37,6 +39,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class FilePropertyController implements Initializable {
 
+
     private MainScreenController mainScreenController;
 
     private ThreadPoolExecutor executor;
@@ -65,6 +68,7 @@ public class FilePropertyController implements Initializable {
     @FXML public FlowPane presetTagsContainer;
     @FXML public VBox propertiesWrapper;
 
+    @FXML public TextField addSingleTagToFileTextField;
     @FXML public TextField addTagTextField;
     @FXML public Button addTagsButton;
     @FXML public Button deletePresetTagsButton;
@@ -325,6 +329,7 @@ public class FilePropertyController implements Initializable {
         updatePathValueLabel(f);
         updateTypeValueLabel(f);
         updateChangeDateValueLabel(f);
+        abortAddingTags();
 
         String mimeType = FileManager.getDataFileMimeType(f);
         if(mimeType != null){
@@ -505,28 +510,37 @@ public class FilePropertyController implements Initializable {
         }else {
 
             showTagsLoadingSpinner();
-
-            executor.submit(() -> {
-                try{
-                    String cmd = FileManager.getResourcePath(getClass(), "exiftool", "exiftool.exe");
-                        cmd += " -L -S -m -q -fast2 -fileName -directory -category ";
-                        cmd += "\"" + f.getPath() +"\"";
-                    Process p = Runtime.getRuntime().exec(cmd);
-                    p.waitFor();
-                    String res = new String(p.getInputStream().readAllBytes());
-                    FileManager.getInstance().updateFiles(res);
+            updateSingleFileTags(f, args -> {
+                //makes sure that the tags are not added to a wrong file property
+                //when the user clicks fast on two files in the list
+                String path = (String) args[0];
+                if(path.equals(this.pathLabelValue.getText())){
                     Platform.runLater(() -> {
                         removeTagsLoadingSpinner();
                         setTagsOfFile(f);
                     });
-                }catch (UnexpectedErrorException e){
-                    this.mainScreenController.showError(e.getMessage());
-                } catch (InterruptedException | IOException e) {
-                    e.printStackTrace();
                 }
             });
-
         }
+    }
+
+    public void updateSingleFileTags(DataFile f, Callback callback) {
+        executor.submit(() -> {
+            try{
+                String cmd = FileManager.getResourcePath(getClass(), "exiftool", "exiftool.exe");
+                    cmd += " -L -S -m -q -fast2 -fileName -directory -category ";
+                    cmd += "\"" + f.getPath() +"\"";
+                Process p = Runtime.getRuntime().exec(cmd);
+                p.waitFor();
+                String res = new String(p.getInputStream().readAllBytes());
+                FileManager.getInstance().updateFiles(res);
+                callback.run(f.getPath());
+            }catch (UnexpectedErrorException e){
+                this.mainScreenController.showError(e.getMessage());
+            } catch (InterruptedException | IOException | InvalidNameException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private void removeTagsLoadingSpinner() {
@@ -743,29 +757,66 @@ public class FilePropertyController implements Initializable {
 
     }
 
-    public void abortTagsAddingButtonClicked(ActionEvent actionEvent) {
-        try{
-            if(selectedTags != null){
-                selectedTags.clear();
-            }
-
-            this.addTagsButton.setVisible(true);
-            this.deletePresetTagsButton.setVisible(true);
-            this.abortTagsAddingButton.setVisible(false);
-            this.saveTagsPreset.setVisible(false);
-
-            this.fileTagsBox.getChildren().removeIf(n -> n.getId() != null && n.getId().equals("presetEditTag"));
-
-
-            this.presetTagsContainer.setDisable(false);
-            this.presetTagsContainer.getChildren().forEach(n -> {
-                n.setCursor(Cursor.DEFAULT);
-                n.setOnMouseClicked(null);
-                n.getStyleClass().remove("green-background");
-                n.setDisable(false);
-            });
-        }catch (Exception e){
-            e.printStackTrace();
+    private void abortAddingTags(){
+        if(selectedTags != null){
+            selectedTags.clear();
         }
+
+        this.addTagsButton.setVisible(true);
+        this.deletePresetTagsButton.setVisible(true);
+        this.abortTagsAddingButton.setVisible(false);
+        this.saveTagsPreset.setVisible(false);
+
+        this.fileTagsBox.getChildren().removeIf(n -> n.getId() != null && n.getId().equals("presetEditTag"));
+
+
+        this.presetTagsContainer.setDisable(false);
+        this.presetTagsContainer.getChildren().forEach(n -> {
+            n.setCursor(Cursor.DEFAULT);
+            n.setOnMouseClicked(null);
+            n.getStyleClass().remove("green-background");
+            n.setDisable(false);
+        });
+    }
+
+    public void abortTagsAddingButtonClicked(ActionEvent actionEvent) {
+        abortAddingTags();
+    }
+
+    public void addSingleTagToFile(ActionEvent actionEvent) {
+        String tagName = this.addSingleTagToFileTextField.getText();
+        if(!tagName.isEmpty()){
+            DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
+            try {
+                this.fileTagsBox.getChildren().clear();
+                this.showTagsLoadingSpinner();
+
+                FileManager.getInstance().addTagToFile(df, tagName, args -> {
+                    Platform.runLater(() -> {
+                        updateTags();
+                        this.addSingleTagToFileTextField.clear();
+                    });
+                });
+            } catch (InvalidNameException e) {
+                this.mainScreenController.showError(e.getMessage());
+                updateTags();
+            }
+        }
+    }
+
+    private void updateTags() {
+        DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
+        this.updateTags(df);
+    }
+
+    public void deletePresetTagsButtonClicked(ActionEvent actionEvent) {
+
+    }
+
+    public void deleteAllTagsPressed(ActionEvent actionEvent) {
+        this.fileTagsBox.getChildren().clear();
+        this.showTagsLoadingSpinner();
+        DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
+        FileManager.getInstance().deleteAllTags(df, args -> Platform.runLater(() -> updateTags()));
     }
 }

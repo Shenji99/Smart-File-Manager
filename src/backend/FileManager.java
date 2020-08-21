@@ -1,6 +1,8 @@
 package backend;
 
 import backend.data.DataFile;
+import backend.exceptions.InvalidFileNameException;
+import backend.exceptions.InvalidNameException;
 import backend.exceptions.UnexpectedErrorException;
 import backend.tasks.Callback;
 import javafx.scene.image.Image;
@@ -11,7 +13,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FileManager {
 
@@ -30,7 +37,10 @@ public class FileManager {
     private SortedSet<String> presetTags;
     private ArrayList<TagObserver> tagObservers;
 
+    private ThreadPoolExecutor executor;
+
     public FileManager() {
+        this.executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
         this.files = new ArrayList<>();
         this.tagObservers = new ArrayList<>();
         this.presetTags = new TreeSet<>(Comparator.comparing(String::toLowerCase));
@@ -297,10 +307,10 @@ public class FileManager {
      *
      * @param res the string from exiftool
      */
-    public void updateFiles(String res) throws UnexpectedErrorException {
+    public void updateFiles(String res) throws UnexpectedErrorException, InvalidNameException {
         res = res.trim();
         if(res.isEmpty()){
-            throw new UnexpectedErrorException("Tags konnten nicht geladen werden\n(Vielleicht ungültiger Dateiname)");
+            throw new UnexpectedErrorException("Tags konnten nicht geladen werden\n(Vielleicht ungültiger Dateiname?)");
         }
         String[] lines = res.split("\n");
         for(int i = 0; i < lines.length; i+=2) {
@@ -311,11 +321,11 @@ public class FileManager {
             //category for videos, subject for images
             if(i+2 <= lines.length-1){
                 if(lines[i+2] != null && (lines[i+2].startsWith("Category") || lines[i+2].startsWith("Subject"))) {
-                    String[] categories = lines[i+2].split(":")[1].strip().split(", ");
+                    String[] categories = lines[i+2].split(":")[1].strip().split(",");
                     if(file != null){
                         file.getTags().clear();
                         for(String tag: categories) {
-                            file.addTag(tag);
+                            file.addTag(tag.trim());
                         }
                     }
                     i++;
@@ -647,5 +657,64 @@ public class FileManager {
             return true;
         }
         return false;
+    }
+
+    public void addTagToFile(DataFile df, String tag, Callback callback) throws InvalidNameException {
+        if(tag != null && df != null){
+            tag = tag.trim();
+            if(!tag.isEmpty()){
+                df.addTag(tag);
+                FileManager.getInstance().saveFileTags(df, callback);
+            }
+        }
+    }
+
+    private void saveFileTags(DataFile df, Callback callback) {
+        executor.submit(() -> {
+            try {
+                if (df.getTags().size() > 0) {
+
+                    String tags = "";
+                    for (int i = 0; i < df.getTags().size(); i++) {
+                        String tag = df.getTags().get(i);
+                        if ((!tag.contains(" ") || containsSpecialChar(tag))) {
+                            tags += tag + ",";
+                        }
+                    }
+
+                    String cmd = getResourcePath(getClass(), "exiftool", "exiftool.exe");
+                    cmd += " -overwrite_original -category=";
+
+                    if(!tags.isEmpty()){
+                        String firstCmd = cmd + tags.substring(0, tags.length() - 1) + " \"" + df.getPath()+"\"";
+                        Process p1 = Runtime.getRuntime().exec(firstCmd);
+                        p1.waitFor();
+                        callback.run();
+                    }
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public static boolean containsSpecialChar(String s) {
+        return Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE).matcher(s).find();
+    }
+
+    public void deleteAllTags(DataFile df, Callback callback) {
+        executor.submit(() -> {
+            df.removeAllTags();
+            String cmd = getResourcePath(getClass(), "exiftool", "exiftool.exe");
+                cmd += " -overwrite_original -category= \""+df.getPath()+"\"";
+            try {
+                Process p = Runtime.getRuntime().exec(cmd);
+                p.waitFor();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            callback.run();
+        });
     }
 }

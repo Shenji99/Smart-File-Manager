@@ -3,6 +3,7 @@ package backend.data;
 import backend.Constants;
 import backend.FileManager;
 import backend.exceptions.InvalidFileNameException;
+import backend.exceptions.InvalidNameException;
 import backend.exceptions.UnexpectedErrorException;
 
 import java.io.File;
@@ -14,8 +15,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class DataFile {
 
@@ -69,11 +69,7 @@ public class DataFile {
 
     }
 
-    private void refreshTags() {
-        //loads the tags manually, runs exiftool command and updates the UI
-    }
-
-    private void loadSubfiles() throws IOException, InterruptedException {
+    private void loadSubfiles() throws IOException {
         File[] dir = new File(this.path).listFiles();
         if(dir != null){
             for(File f: dir) {
@@ -179,10 +175,9 @@ public class DataFile {
             return size/1000000+" MB";
         }else if(size >= 1000) {
             return size/1000+" KB";
-        }else if(size < 1000) {
+        }else {
             return size+" Bytes";
         }
-        return null;
     }
 
 
@@ -190,9 +185,18 @@ public class DataFile {
         this.files.remove(file);
     }
 
-    public void addTag(String tag) {
-        if(!this.tags.contains(tag)) {
-            this.tags.add(tag);
+    public void addTag(String tag) throws InvalidNameException {
+        if(!this.tags.contains(tag)){
+            if(FileManager.containsSpecialChar(tag)){
+                throw new InvalidNameException("Keine Sonderzeichen in Tags!");
+            }
+            for(int i = 0; i < this.tags.size(); i++) {
+                if (tag.toLowerCase().compareTo(this.tags.get(i).toLowerCase()) < 0){
+                    tags.add(i, tag);
+                    return;
+                }
+            }
+            tags.add(tag);
         }
     }
 
@@ -207,7 +211,7 @@ public class DataFile {
 
     //GETTER SETTER
 
-    public List<String> getTags() {
+    public ArrayList<String> getTags() {
         return this.tags;
     }
 
@@ -291,6 +295,9 @@ public class DataFile {
         this.width = width;
     }
 
+    public void removeAllTags() {
+        this.tags.clear();
+    }
 }
 
 

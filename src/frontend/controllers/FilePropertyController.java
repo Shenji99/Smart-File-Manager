@@ -39,7 +39,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class FilePropertyController implements Initializable {
 
-
     private MainScreenController mainScreenController;
 
     private ThreadPoolExecutor executor;
@@ -68,8 +67,8 @@ public class FilePropertyController implements Initializable {
     @FXML public FlowPane presetTagsContainer;
     @FXML public VBox propertiesWrapper;
 
-
     private HashSet<String> selectedTags;
+    @FXML public Button addTagPresetButton;
     @FXML public Button addSingleTagButton;
     @FXML public TextField addSingleTagToFileTextField;
     @FXML public TextField addTagTextField;
@@ -106,7 +105,7 @@ public class FilePropertyController implements Initializable {
         this.playIcon.setVisible(false);
 
         String path = FileManager.getResourcePath(getClass(), "images", "playIcon.png");
-        Image playImg = new Image("file:/"+path);
+        Image playImg = new Image("file:/" + path);
         this.playIcon.setImage(playImg);
 
         executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
@@ -115,19 +114,19 @@ public class FilePropertyController implements Initializable {
     private void initializeVideoControl() {
         MediaPlayer player = this.mediaView.getMediaPlayer();
 
-        if(this.videoSliderListener != null){
+        if (this.videoSliderListener != null) {
             this.videoSlider.valueProperty().removeListener(videoSliderListener);
         }
 
-        if(this.playButtonListener != null){
+        if (this.playButtonListener != null) {
             player.currentTimeProperty().removeListener(playButtonListener);
         }
 
-        if(this.volumeSliderListener != null){
+        if (this.volumeSliderListener != null) {
             this.volumeSlider.valueProperty().removeListener(volumeSliderListener);
         }
 
-        player.setVolume(this.volumeSlider.getValue()/100);
+        player.setVolume(this.volumeSlider.getValue() / 100);
 
         this.pauseVideoButton.setOnAction(event -> {
             MediaPlayer.Status status = player.getStatus();
@@ -171,8 +170,8 @@ public class FilePropertyController implements Initializable {
         videoSlider.valueProperty().addListener(this.videoSliderListener);
 
         this.volumeSliderListener = observable -> {
-            if(volumeSlider.isPressed()){
-                player.setVolume(volumeSlider.getValue()/100);
+            if (volumeSlider.isPressed()) {
+                player.setVolume(volumeSlider.getValue() / 100);
             }
         };
         this.volumeSlider.valueProperty().addListener(this.volumeSliderListener);
@@ -181,30 +180,30 @@ public class FilePropertyController implements Initializable {
 
     private void updateSliderValues(MediaPlayer player) {
         Platform.runLater(() -> {
-            if(!volumeSlider.isPressed()){
+            if (!volumeSlider.isPressed()) {
                 this.videoSlider.setValue(player.getCurrentTime().toMillis() / player.getTotalDuration().toMillis() * 100);
             }
-            int scnds = (int) player.getCurrentTime().toSeconds()%60;
+            int scnds = (int) player.getCurrentTime().toSeconds() % 60;
             int minutes = (int) player.getCurrentTime().toMinutes();
 
             String minStr, secStr;
 
-            if(minutes < 10){
-                minStr = "0"+minutes;
-            }else {
+            if (minutes < 10) {
+                minStr = "0" + minutes;
+            } else {
                 minStr = Integer.toString(minutes);
             }
-            if(scnds < 10){
-                secStr = "0"+scnds;
-            }else {
+            if (scnds < 10) {
+                secStr = "0" + scnds;
+            } else {
                 secStr = Integer.toString(scnds);
             }
-            this.currentTime.setText(minStr+":"+secStr);
+            this.currentTime.setText(minStr + ":" + secStr);
         });
     }
 
     public void updateThumbnail(DataFile f, boolean set) {
-        if(set) {
+        if (set) {
             hideMediaPlayerVideo();
         }
         this.playIcon.setVisible(false);
@@ -214,7 +213,7 @@ public class FilePropertyController implements Initializable {
 
         try {
             //show the spinner while loading
-            if(set) {
+            if (set) {
                 Platform.runLater(this::showThumbnailLoadingSpinner);
             }
             if (!image.exists()) {
@@ -223,7 +222,7 @@ public class FilePropertyController implements Initializable {
                 executor.submit(() -> {
                     try {
                         Image img = FileManager.createThumbnail(f, outpath);
-                        if(set) {
+                        if (set) {
                             Platform.runLater(() -> {
                                 hideThumbnailLoadingSpinner();
                                 this.thumbnail.setImage(img);
@@ -233,20 +232,20 @@ public class FilePropertyController implements Initializable {
                                 }
                             });
                         }
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 });
-            }else if(set){
+            } else if (set) {
                 Platform.runLater(() -> {
                     hideThumbnailLoadingSpinner();
                     this.thumbnail.setImage(new Image(image.toURI().toString()));
-                    if(FileManager.getDataFileMimeType(f).equals("video/mp4")) {
+                    if (FileManager.getDataFileMimeType(f).equals("video/mp4")) {
                         this.playIcon.setVisible(true);
                     }
                 });
             }
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -255,14 +254,14 @@ public class FilePropertyController implements Initializable {
         //get the spinner, if it doesnt exist, a spinner is created
         ImageView spinner = null;
         StackPane wrapper = (StackPane) this.thumbnail.getParent();
-        for(Node n: wrapper.getChildren()){
-            if(n instanceof ImageView && n.getId() != null){
-                if(n.getId().equals("spinner")){
+        for (Node n : wrapper.getChildren()) {
+            if (n instanceof ImageView && n.getId() != null) {
+                if (n.getId().equals("spinner")) {
                     spinner = (ImageView) n;
                 }
             }
         }
-        if(spinner == null) {
+        if (spinner == null) {
             spinner = mainScreenController.createLodingSpinner(50, 50);
             spinner.setId("spinner");
             wrapper.getChildren().add(spinner);
@@ -272,8 +271,8 @@ public class FilePropertyController implements Initializable {
 
     public void hideThumbnailLoadingSpinner() {
         StackPane wrapper = (StackPane) this.thumbnail.getParent();
-        for(Node n: wrapper.getChildren()){
-            if(n instanceof ImageView && n.getId() != null && n.getId().equals("spinner")) {
+        for (Node n : wrapper.getChildren()) {
+            if (n instanceof ImageView && n.getId() != null && n.getId().equals("spinner")) {
                 n.setVisible(false);
                 return;
             }
@@ -283,18 +282,18 @@ public class FilePropertyController implements Initializable {
     private void hideMediaPlayerVideo() {
         setMediaControlVisibility(false);
 
-        if(mediaView.getMediaPlayer() != null) {
+        if (this.mediaView != null && this.mediaView.getMediaPlayer() != null) {
             this.mediaView.getMediaPlayer().pause();
         }
         playIcon.setOnMouseClicked(this::playVideo);
     }
 
     protected void hideNameEdit() {
-        if(nameStackPane != null && nameLabelValue != null){
+        if (nameStackPane != null && nameLabelValue != null) {
             Iterator iter = nameStackPane.getChildren().iterator();
-            while(iter.hasNext()){
+            while (iter.hasNext()) {
                 Node n = (Node) iter.next();
-                if(n instanceof TextField){
+                if (n instanceof TextField) {
                     iter.remove();
                 }
             }
@@ -303,8 +302,8 @@ public class FilePropertyController implements Initializable {
     }
 
     public void updateFileProperties(Event event, DataFile f) {
-        if(event instanceof MouseEvent){
-            if(((MouseEvent)event).getClickCount() == 2){
+        if (event instanceof MouseEvent) {
+            if (((MouseEvent) event).getClickCount() == 2) {
                 FileManager.getInstance().showFileInExplorer(f.getPath());
             }
         }
@@ -321,19 +320,19 @@ public class FilePropertyController implements Initializable {
         abortAddingTags();
 
         String mimeType = FileManager.getDataFileMimeType(f);
-        if(mimeType != null){
+        if (mimeType != null) {
             this.playIcon.setVisible(mimeType.equals("video/mp4")); //only enable playicon at mp4 vids
 
-            if(mimeType.startsWith("video") || mimeType.startsWith("image")) {
+            if (mimeType.startsWith("video") || mimeType.startsWith("image")) {
                 updateWidthHeightLabel(f);
-            }else {
+            } else {
                 this.widthHeightLabel.setVisible(false);
                 this.widthHeightLabelValue.setVisible(false);
             }
         }
 
         this.updateTags(f);
-        if(updateThumbnail) {
+        if (updateThumbnail) {
             this.updateThumbnail(f, true);
         }
     }
@@ -385,7 +384,7 @@ public class FilePropertyController implements Initializable {
         pathLabelValue.setOnContextMenuRequested(contextMenuEvent -> cm.show(pathLabelValue, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY()));
 
         pathLabelValue.setOnMouseClicked(mouseEvent -> {
-            if(mouseEvent.getClickCount() == 2) {
+            if (mouseEvent.getClickCount() == 2) {
                 FileManager.getInstance().showFileInExplorer(f.getPath());
             }
         });
@@ -430,7 +429,7 @@ public class FilePropertyController implements Initializable {
             try {
                 String res = FileManager.getResolution(f);
                 Platform.runLater(() -> {
-                    if(!res.isEmpty()) {
+                    if (!res.isEmpty()) {
                         this.widthHeightLabel.setVisible(true);
                         this.widthHeightLabelValue.setVisible(true);
                         String[] res2 = res.split("x");
@@ -450,7 +449,7 @@ public class FilePropertyController implements Initializable {
     }
 
     private void editFileName(Event event, DataFile f) {
-        if((event instanceof MouseEvent && ((MouseEvent) event).getClickCount() == 2) || event instanceof ActionEvent) {
+        if ((event instanceof MouseEvent && ((MouseEvent) event).getClickCount() == 2) || event instanceof ActionEvent) {
             nameLabelValue.setVisible(false);
             TextField textfield = new TextField(nameLabelValue.getText());
             textfield.setPrefHeight(nameLabelValue.getHeight() + 10);
@@ -459,14 +458,14 @@ public class FilePropertyController implements Initializable {
             nameStackPane.getChildren().add(textfield);
 
             textfield.setOnKeyPressed(event1 -> {
-                if(event1.getCode() == KeyCode.ENTER) {
+                if (event1.getCode() == KeyCode.ENTER) {
                     String newName = textfield.getText();
-                    if(!newName.equals(f.getName())){
-                        try{
+                    if (!newName.equals(f.getName())) {
+                        try {
                             f.rename(newName);
                             nameLabelValue.setText(newName);
                             hideNameEdit();
-                        }catch (InvalidFileNameException e){
+                        } catch (InvalidFileNameException e) {
                             //Show error
                             textfield.getStyleClass().add("error-border");
                             Tooltip tooltip = new Tooltip();
@@ -475,7 +474,7 @@ public class FilePropertyController implements Initializable {
                         } catch (UnexpectedErrorException e) {
                             this.mainScreenController.showError(e.getMessage());
                         }
-                    }else {
+                    } else {
                         hideNameEdit();
                     }
                 }
@@ -484,25 +483,25 @@ public class FilePropertyController implements Initializable {
     }
 
     public void filePropertiesPaneClicked(MouseEvent event) {
-        if(event.getTarget() != this.nameLabelValue) {
+        if (event.getTarget() != this.nameLabelValue) {
             hideNameEdit();
         }
-        if(event.getTarget() != this.addTagTextField) {
+        if (event.getTarget() != this.addTagTextField) {
             this.addTagTextField.getStyleClass().remove("error-border");
         }
     }
 
     private void updateTags(DataFile f) {
         this.fileTagsBox.getChildren().clear();
-        if(f.isTagsLoaded()){
+        if (f.isTagsLoaded()) {
             setTagsOfFile(f);
-        }else {
+        } else {
             showTagsLoadingSpinner();
             updateSingleFileTags(f, args -> {
                 //makes sure that the tags are not added to a wrong file property
                 //when the user clicks fast on two files in the list
                 String path = (String) args[0];
-                if(path.equals(this.pathLabelValue.getText())){
+                if (path.equals(this.pathLabelValue.getText())) {
                     Platform.runLater(() -> {
                         removeTagsLoadingSpinner();
                         setTagsOfFile(f);
@@ -514,16 +513,16 @@ public class FilePropertyController implements Initializable {
 
     public void updateSingleFileTags(DataFile f, Callback callback) {
         executor.submit(() -> {
-            try{
+            try {
                 String cmd = FileManager.getResourcePath(getClass(), "exiftool", "exiftool.exe");
-                    cmd += " -L -S -m -q -fast2 -fileName -directory -category ";
-                    cmd += "\"" + f.getPath() +"\"";
+                cmd += " -L -S -m -q -fast2 -fileName -directory -category ";
+                cmd += "\"" + f.getPath() + "\"";
                 Process p = Runtime.getRuntime().exec(cmd);
                 p.waitFor();
                 String res = new String(p.getInputStream().readAllBytes());
                 FileManager.getInstance().updateFiles(res);
                 callback.run(f.getPath());
-            }catch (UnexpectedErrorException e){
+            } catch (UnexpectedErrorException e) {
                 this.mainScreenController.showError(e.getMessage());
             } catch (InterruptedException | IOException | InvalidNameException e) {
                 e.printStackTrace();
@@ -532,8 +531,8 @@ public class FilePropertyController implements Initializable {
     }
 
     private void removeTagsLoadingSpinner() {
-        for(Node n: this.fileTagsBox.getChildren()){
-            if(n instanceof ImageView && n.getId() != null && n.getId().equals("spinner")){
+        for (Node n : this.fileTagsBox.getChildren()) {
+            if (n instanceof ImageView && n.getId() != null && n.getId().equals("spinner")) {
                 n.setVisible(false);
                 this.fileTagsBox.getChildren().remove(n);
                 return;
@@ -542,36 +541,36 @@ public class FilePropertyController implements Initializable {
     }
 
     private void showTagsLoadingSpinner() {
-        try{
+        try {
             ImageView spinner = null;
-            for(Node n: this.fileTagsBox.getChildren()){
-                if(n instanceof ImageView && n.getId() != null && n.getId().equals("spinner")){
+            for (Node n : this.fileTagsBox.getChildren()) {
+                if (n instanceof ImageView && n.getId() != null && n.getId().equals("spinner")) {
                     spinner = (ImageView) n;
                     break;
                 }
             }
 
-            if(spinner == null){
-                spinner = this.mainScreenController.createLodingSpinner(40,40);
+            if (spinner == null) {
+                spinner = this.mainScreenController.createLodingSpinner(40, 40);
                 spinner.setId("spinner");
             }
             spinner.setVisible(true);
 
             this.fileTagsBox.getChildren().clear();
             this.fileTagsBox.getChildren().add(spinner);
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private void setTagsOfFile(DataFile f) {
         List<String> tags = f.getTags();
-        for(String tag: tags){
-           this.fileTagsBox.getChildren().add(createTagNode(tag));
+        for (String tag : tags) {
+            this.fileTagsBox.getChildren().add(createTagNode(tag));
         }
     }
 
-    public Node createTagNode(String text){
+    public Node createTagNode(String text) {
         StackPane stackpane = new StackPane();
         Label l = new Label(text);
         stackpane.getChildren().add(l);
@@ -584,10 +583,10 @@ public class FilePropertyController implements Initializable {
 
     public void playVideo(MouseEvent mouseEvent) {
         try {
-            if(this.mediaPlayer != null) {
+            if (this.mediaPlayer != null) {
                 this.mediaPlayer.dispose();
             }
-            if(this.videoSlider != null){
+            if (this.videoSlider != null) {
                 this.videoSlider.setValue(0);
             }
             Media media = new Media(new File(pathLabelValue.getText()).toURI().toString());
@@ -603,20 +602,20 @@ public class FilePropertyController implements Initializable {
 
             mediaPlayer.setOnReady(() -> {
                 int minDuration = (int) this.mediaPlayer.getTotalDuration().toMinutes();
-                int secDuration = (int) (this.mediaPlayer.getTotalDuration().toSeconds()%60);
+                int secDuration = (int) (this.mediaPlayer.getTotalDuration().toSeconds() % 60);
                 String minDurationStr, secDurationStr;
 
-                if(minDuration < 10){
-                    minDurationStr = "0"+minDuration;
-                }else {
+                if (minDuration < 10) {
+                    minDurationStr = "0" + minDuration;
+                } else {
                     minDurationStr = Integer.toString(minDuration);
                 }
-                if(secDuration < 10){
-                    secDurationStr = "0"+secDuration;
-                }else {
+                if (secDuration < 10) {
+                    secDurationStr = "0" + secDuration;
+                } else {
                     secDurationStr = Integer.toString(secDuration);
                 }
-                this.videoDuration.setText(minDurationStr+":"+secDurationStr);
+                this.videoDuration.setText(minDurationStr + ":" + secDurationStr);
             });
 
             playIcon.setOnMouseClicked(mouseEvent1 -> {
@@ -626,18 +625,18 @@ public class FilePropertyController implements Initializable {
             });
 
             mediaView.setOnMouseClicked(mouseEvent1 -> {
-                if(mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
+                if (mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
                     mediaPlayer.pause();
                     this.pauseVideoButton.setText(">");
                     playIcon.setVisible(true);
-                }else{
+                } else {
                     mediaPlayer.play();
                     this.pauseVideoButton.setText("||");
                     playIcon.setVisible(false);
                 }
             });
 
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -649,10 +648,10 @@ public class FilePropertyController implements Initializable {
     private void setMediaControlVisibility(boolean b) {
         //resetting the size is important so that the container resizes
         // when the new video/image is bigger or smaller
-        if(b) {
+        if (b) {
             this.mediaView.setFitWidth(400);
             this.mediaView.setFitHeight(300);
-        }else {
+        } else {
             //cant be 0 otherwise it is buggy
             this.mediaView.setFitWidth(10);
             this.mediaView.setFitHeight(10);
@@ -666,8 +665,8 @@ public class FilePropertyController implements Initializable {
 
     private void updatePresetTagList(Set<String> tags) {
         this.presetTagsContainer.getChildren().clear();
-        for(String tag: tags){
-           this.presetTagsContainer.getChildren().add(createTagNode(tag));
+        for (String tag : tags) {
+            this.presetTagsContainer.getChildren().add(createTagNode(tag));
         }
     }
 
@@ -684,25 +683,30 @@ public class FilePropertyController implements Initializable {
     }
 
     public void addTagToPreset(ActionEvent actionEvent) {
-        String tagText = this.addTagTextField.getText();
-        if(!tagText.isEmpty()){
-            if(FileManager.getInstance().addTagToPreset(tagText)) {
-                this.addTagTextField.getStyleClass().remove("error-border");
-                this.addTagTextField.clear();
-            }else {
-                this.mainScreenController.showError("Tag existiert bereits");
-                this.addTagTextField.getStyleClass().add("error-border");
+        try {
+            String tagText = this.addTagTextField.getText();
+            if (!tagText.isEmpty()) {
+                if (FileManager.getInstance().addTagToPreset(tagText)) {
+                    this.addTagTextField.getStyleClass().remove("error-border");
+                    this.addTagTextField.clear();
+                } else {
+                    this.mainScreenController.showError("Tag existiert bereits");
+                    this.addTagTextField.getStyleClass().add("error-border");
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    public void removeErrorBorder(Node n){
+    public void addErrorBorder(Node n) {
+        n.getStyleClass().add("error-border");
+    }
+
+    public void removeErrorBorder(Node n) {
         n.getStyleClass().remove("error-border");
     }
 
-    public void removeErrorBorder(KeyEvent keyEvent) {
-        this.removeErrorBorder(this.addTagTextField);
-    }
 
     public void addTagsToFile(ActionEvent actionEvent) {
         selectedTags = new HashSet<String>();
@@ -714,11 +718,11 @@ public class FilePropertyController implements Initializable {
         this.saveTagsPresetButton.setVisible(true);
 
         DataFile current = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
-        if(current != null){
-            for(Node n: this.presetTagsContainer.getChildren()) {
-                Label l = (Label) ((StackPane)n).getChildren().get(0);
+        if (current != null) {
+            for (Node n : this.presetTagsContainer.getChildren()) {
+                Label l = (Label) ((StackPane) n).getChildren().get(0);
                 n.getStyleClass().add("green-background");
-                if(!current.hasTag(l.getText())){
+                if (!current.hasTag(l.getText())) {
                     n.setCursor(Cursor.HAND);
                     n.setOnMouseClicked(mouseEvent -> {
                         String text = l.getText();
@@ -730,7 +734,7 @@ public class FilePropertyController implements Initializable {
                         tagNode.setCursor(Cursor.HAND);
                         addToFileTagsBox(tagNode, n);
                     });
-                }else {
+                } else {
                     n.setDisable(true);
                 }
             }
@@ -742,13 +746,13 @@ public class FilePropertyController implements Initializable {
         this.fileTagsBox.getChildren().add(n);
         n.setOnMouseClicked(mouseEvent -> {
             this.fileTagsBox.getChildren().remove(n);
-            this.selectedTags.remove(((Label)((StackPane)n).getChildren().get(0)).getText());
+            this.selectedTags.remove(((Label) ((StackPane) n).getChildren().get(0)).getText());
             reference.setDisable(false);
         });
     }
 
-    private void abortAddingTags(){
-        if(selectedTags != null){
+    private void abortAddingTags() {
+        if (selectedTags != null) {
             selectedTags.clear();
         }
 
@@ -773,56 +777,6 @@ public class FilePropertyController implements Initializable {
         abortAddingTags();
     }
 
-    public void addSingleTagToFile(ActionEvent actionEvent) {
-        String tagName = this.addSingleTagToFileTextField.getText();
-        if(!tagName.isEmpty()){
-            this.hideMediaPlayerVideo();
-            this.addSingleTagButton.setDisable(true);
-            this.addSingleTagToFileTextField.clear();
-
-            if(this.mediaPlayer != null){
-                this.mediaPlayer.dispose();
-            }
-            boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(FileManager.getInstance().findFileByPath(this.pathLabelValue.getText()));
-            if(isPlayableVideo){
-                this.hideMediaPlayerVideo();
-                this.showThumbnailLoadingSpinner();
-            }
-
-            DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
-            try {
-                this.fileTagsBox.getChildren().clear();
-                this.showTagsLoadingSpinner();
-
-                FileManager.getInstance().addTagToFile(df, tagName, args -> {
-                    Platform.runLater(() ->{
-                        updateTags();
-                        addSingleTagButton.setDisable(false);
-                        if(isPlayableVideo && pathLabelValue.getText().equals(df.getPath())){
-                            playIcon.setVisible(true);
-                            hideThumbnailLoadingSpinner();
-                        }
-                    });
-                }, error -> {
-                    String msg = (String) error[0];
-                    this.mainScreenController.showError(msg);
-                    df.setTagsLoaded(false);
-                    Platform.runLater(() -> {
-                        addSingleTagButton.setDisable(false);
-                        updateTags(df);
-                        if(isPlayableVideo && pathLabelValue.getText().equals(df.getPath())){
-                            playIcon.setVisible(true);
-                            hideThumbnailLoadingSpinner();
-                        }
-                    });
-                });
-            } catch (InvalidNameException e) {
-                this.mainScreenController.showError(e.getMessage());
-                updateTags();
-            }
-        }
-    }
-
     private void updateTags() {
         DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
         this.updateTags(df);
@@ -832,54 +786,185 @@ public class FilePropertyController implements Initializable {
 
     }
 
-    public void deleteAllTagsPressed(ActionEvent actionEvent) {
-        this.fileTagsBox.getChildren().clear();
-        this.showTagsLoadingSpinner();
-        DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
-        FileManager.getInstance().deleteAllTags(df, args -> Platform.runLater(() -> updateTags()));
+    public void addSingleTagToFile(ActionEvent actionEvent) {
+        String tagName = this.addSingleTagToFileTextField.getText();
+        if (!tagName.isEmpty()) {
+            this.hideMediaPlayerVideo();
+            this.addSingleTagButton.setDisable(true);
+            this.addSingleTagToFileTextField.clear();
+
+            this.showTagsLoadingSpinner();
+
+            if (this.mediaPlayer != null) {
+                this.mediaPlayer.dispose();
+            }
+            boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(FileManager.getInstance().findFileByPath(this.pathLabelValue.getText()));
+            if (isPlayableVideo) {
+                this.hideMediaPlayerVideo();
+                this.playIcon.setVisible(false);
+            }
+
+            DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
+            try {
+                FileManager.getInstance().addTagToFile(df, tagName, callback -> {
+                    addSingleTagButton.setDisable(false);
+                    Platform.runLater(() -> {
+                        if (isPlayableVideo && pathLabelValue.getText().equals(df.getPath())) {
+                            updateTags();
+                            playIcon.setVisible(true);
+                        }
+                    });
+                }, error -> {
+                    String msg = (String) error[0];
+                    this.mainScreenController.showError(msg);
+                    df.setTagsLoaded(false);
+                    addSingleTagButton.setDisable(false);
+                    Platform.runLater(() -> {
+                        if (pathLabelValue.getText().equals(df.getPath())) {
+                            updateTags();
+                            if(isPlayableVideo){
+                                playIcon.setVisible(true);
+                            }
+                        }
+                    });
+                });
+            } catch (InvalidNameException e) {
+                this.mainScreenController.showError(e.getMessage());
+                addSingleTagButton.setDisable(false);
+                if (FileManager.getInstance().isPlayableVideo(df) && pathLabelValue.getText().equals(df.getPath())) {
+                    updateTags();
+                    playIcon.setVisible(true);
+                }
+            }
+        }
     }
 
     public void saveAddedPresetTagsClicked(ActionEvent actionEvent) {
+        if(this.selectedTags.size() <= 0){
+            return;
+        }
         DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
         try {
             this.fileTagsBox.getChildren().clear();
             this.showTagsLoadingSpinner();
 
-            if(this.mediaPlayer != null){
+            if (this.mediaPlayer != null) {
                 this.mediaPlayer.dispose();
             }
 
             boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(df);
-            if(isPlayableVideo){
+            if (isPlayableVideo) {
                 this.hideMediaPlayerVideo();
-                this.showThumbnailLoadingSpinner();
+                this.playIcon.setVisible(false);
             }
 
-            FileManager.getInstance().addTagsToFile(df, this.selectedTags, args -> {
+            FileManager.getInstance().addTagsToFile(df, this.selectedTags, callback -> {
                 Platform.runLater(() -> {
                     updateTags();
                     abortAddingTags();
-                    if(isPlayableVideo && pathLabelValue.getText().equals(df.getPath())){
+                    if (isPlayableVideo && pathLabelValue.getText().equals(df.getPath())) {
                         playIcon.setVisible(true);
-                        hideThumbnailLoadingSpinner();
                     }
                 });
             }, error -> {
                 String msg = (String) error[0];
                 this.mainScreenController.showError(msg);
                 df.setTagsLoaded(false);
-                Platform.runLater(() -> {
-                    updateTags(df);
-                    abortAddingTags();
-                    if(isPlayableVideo && pathLabelValue.getText().equals(df.getPath())){
-                        playIcon.setVisible(true);
-                        hideThumbnailLoadingSpinner();
-                    }
-                });
+                if (pathLabelValue.getText().equals(df.getPath())) {
+                    Platform.runLater(() -> {
+                        abortAddingTags();
+                        updateTags();
+                        if(isPlayableVideo){
+                            playIcon.setVisible(true);
+                        }
+                    });
+                }
             });
         } catch (InvalidNameException e) {
             this.mainScreenController.showError(e.getMessage());
             updateTags();
+            abortAddingTags();
+            if (FileManager.getInstance().isPlayableVideo(df) && pathLabelValue.getText().equals(df.getPath())) {
+                playIcon.setVisible(true);
+            }
+        }
+    }
+
+
+    public void deleteAllTagsPressed(ActionEvent actionEvent) {
+        DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
+
+        if(df.getTags().size() > 0){
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Bestätigungs Dialog");
+            alert.setHeaderText("Möchtest du wirklich alle Tags der Datei löschen?");
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.get() == ButtonType.OK){
+                this.fileTagsBox.getChildren().clear();
+                this.showTagsLoadingSpinner();
+                FileManager.getInstance().deleteAllTags(df, callback -> Platform.runLater(() -> {
+                    if(df.getPath().equals(this.pathLabelValue.getText())){
+                        updateTags();
+                    }
+                }));
+            } else {
+                alert.close();
+            }
+        }
+    }
+
+    public void addTagPresetTagTyped(KeyEvent keyEvent) {
+        this.addTagPreset();
+    }
+
+    private void addTagPreset() {
+        try {
+            //check if typed word is already a preset tag
+            String text = this.addTagTextField.getText().trim();
+            if (!text.isEmpty()) {
+                if (!FileManager.getInstance().getPresetTags().contains(text)) {
+                    this.removeErrorBorder(this.addTagTextField);
+                    this.addTagPresetButton.setDisable(false);
+                } else {
+                    this.addErrorBorder(this.addTagTextField);
+                    this.addTagPresetButton.setDisable(true);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void addSingleTagTextFieldTyped(KeyEvent keyEvent) {
+        this.addSingleTag();
+    }
+
+    private void addSingleTag() {
+        //check if typed word is already a tag
+        String text = this.addSingleTagToFileTextField.getText().trim();
+        if (!text.isEmpty()) {
+            if (!FileManager.getInstance().findFileByPath(this.pathLabelValue.getText()).hasTag(text)) {
+                this.removeErrorBorder(this.addSingleTagToFileTextField);
+                this.addSingleTagButton.setDisable(false);
+            } else {
+                this.addErrorBorder(this.addSingleTagToFileTextField);
+                this.addSingleTagButton.setDisable(true);
+            }
+        }
+    }
+
+    public void addTagPresetKeyPressed(KeyEvent keyEvent) {
+        //neded because keytyped has no key code
+        if(keyEvent.getCode() == KeyCode.ENTER){
+            addTagToPreset(null);
+        }
+    }
+
+    public void addSingleTagKeyPressed(KeyEvent keyEvent) {
+        //neded because keytyped has no key code
+        if(keyEvent.getCode() == KeyCode.ENTER){
+            addSingleTagToFile(null);
         }
     }
 }

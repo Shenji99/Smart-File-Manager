@@ -184,7 +184,7 @@
                                        <children>
                                           <HBox alignment="CENTER_LEFT" prefWidth="1000.0" spacing="10.0">
                                              <children>
-                                                <TextField fx:id="addSingleTagToFileTextField" minWidth="150.0" onKeyTyped="#removeErrorBorder" promptText="Tag Name..." />
+                                                <TextField fx:id="addSingleTagToFileTextField" minWidth="150.0" onKeyPressed="#addSingleTagKeyPressed" onKeyTyped="#addSingleTagTextFieldTyped" promptText="Tag Name..." />
                                                 <Button fx:id="addSingleTagButton" minWidth="100.0" mnemonicParsing="false" onAction="#addSingleTagToFile" prefHeight="21.0" prefWidth="97.0" text="Tag hinzufügen">
                                                    <padding>
                                                       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -264,8 +264,8 @@
                                  <children>
                                     <HBox alignment="CENTER_LEFT" prefWidth="1000.0" spacing="10.0">
                                        <children>
-                                          <TextField fx:id="addTagTextField" minWidth="150.0" onKeyTyped="#removeErrorBorder" promptText="Tag Name..." />
-                                          <Button contentDisplay="CENTER" minWidth="83.0" mnemonicParsing="false" onAction="#addTagToPreset" prefHeight="40.0" prefWidth="83.0" text="Tag Preset hinzufügen" textAlignment="CENTER" wrapText="true">
+                                          <TextField fx:id="addTagTextField" minWidth="150.0" onKeyPressed="#addTagPresetKeyPressed" onKeyTyped="#addTagPresetTagTyped" promptText="Tag Name..." />
+                                          <Button fx:id="addTagPresetButton" contentDisplay="CENTER" minWidth="83.0" mnemonicParsing="false" onAction="#addTagToPreset" prefHeight="40.0" prefWidth="83.0" text="Tag Preset hinzufügen" textAlignment="CENTER" wrapText="true">
                                              <padding>
                                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                              </padding>

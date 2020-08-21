@@ -626,6 +626,9 @@ public class FileManager {
 
         if(!data.isEmpty()){
             String[] tags = data.split(",");
+            for(int i = 0; i < tags.length; i++){
+                tags[i] = tags[i].trim();
+            }
             this.presetTags.addAll(Arrays.asList(tags));
             notifyTagObservers();
         }
@@ -732,6 +735,14 @@ public class FileManager {
     }
 
     public boolean isPlayableVideo(DataFile df) {
-        return getDataFileMimeType(df).equals("video/mp4");
+        String mimetype = getDataFileMimeType(df);
+        if(mimetype != null){
+            return mimetype.equals("video/mp4");
+        }
+        return false;
+    }
+
+    public Set getPresetTags() {
+        return this.presetTags;
     }
 }

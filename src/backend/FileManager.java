@@ -1,7 +1,6 @@
 package backend;
 
 import backend.data.DataFile;
-import backend.exceptions.InvalidFileNameException;
 import backend.exceptions.InvalidNameException;
 import backend.exceptions.UnexpectedErrorException;
 import backend.tasks.Callback;
@@ -13,11 +12,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FileManager {
@@ -218,7 +215,7 @@ public class FileManager {
      * each thread builds the exiftool command. Each command contains "maxFileAmountForCmd" files
      * (to not reach maximum cmd line length)
      * It is important to process as many files at a time as possible to reduce computational resources. (opening exiftool is expensive)
-     * The threads then process all the files and extract the tags (Category or Subject) and adds them to the files tag field
+     * The threads then process all the files and extract the tags (Category) and adds them to the files tag field
      * After all Threads are finished the callback method gets run
      */
     public void loadTagsInThread(List files, Callback callback) {
@@ -303,7 +300,7 @@ public class FileManager {
      * Directory: C:/path/to/file2/
      * FileName: file3.jpg
      * Directory: C:/path/to/file3/
-     * Subject: tag1, tag2
+     * Category: tag1, tag2
      *
      * @param res the string from exiftool
      */
@@ -318,20 +315,18 @@ public class FileManager {
             String dir = lines[i+1].split(": ")[1].strip();
             String path = (dir+"/"+name).replace("/", "\\");
             DataFile file = findFileByPath(path);
-            //category for videos, subject for images
-            if(i+2 <= lines.length-1){
-                if(lines[i+2] != null && (lines[i+2].startsWith("Category") || lines[i+2].startsWith("Subject"))) {
-                    String[] categories = lines[i+2].split(":")[1].strip().split(",");
-                    if(file != null){
-                        file.getTags().clear();
+            if(file != null){
+                //category for videos
+                file.removeAllTags();
+                if(i+2 <= lines.length-1){
+                    if(lines[i+2] != null && (lines[i+2].startsWith("Category"))) {
+                        String[] categories = lines[i+2].split(":")[1].strip().split(",");
                         for(String tag: categories) {
                             file.addTag(tag.trim());
                         }
+                        i++;
                     }
-                    i++;
                 }
-            }
-            if(file != null) {
                 file.setTagsLoaded(true);
             }
         }
@@ -659,17 +654,28 @@ public class FileManager {
         return false;
     }
 
-    public void addTagToFile(DataFile df, String tag, Callback callback) throws InvalidNameException {
+    public void addTagsToFile(DataFile df, Set<String> tags, Callback callback, Callback onError) throws InvalidNameException {
+        if(tags != null && df != null){
+            for(String tag: tags){
+                if(!tag.isEmpty()){
+                    df.addTag(tag);
+                }
+            }
+            FileManager.getInstance().saveFileTags(df, callback, onError);
+        }
+    }
+
+    public void addTagToFile(DataFile df, String tag, Callback callback, Callback onError) throws InvalidNameException {
         if(tag != null && df != null){
             tag = tag.trim();
             if(!tag.isEmpty()){
                 df.addTag(tag);
-                FileManager.getInstance().saveFileTags(df, callback);
+                FileManager.getInstance().saveFileTags(df, callback, onError);
             }
         }
     }
 
-    private void saveFileTags(DataFile df, Callback callback) {
+    private void saveFileTags(DataFile df, Callback callback, Callback onError) {
         executor.submit(() -> {
             try {
                 if (df.getTags().size() > 0) {
@@ -677,7 +683,7 @@ public class FileManager {
                     String tags = "";
                     for (int i = 0; i < df.getTags().size(); i++) {
                         String tag = df.getTags().get(i);
-                        if ((!tag.contains(" ") || containsSpecialChar(tag))) {
+                        if (!containsSpecialChar(tag)) {
                             tags += tag + ",";
                         }
                     }
@@ -685,11 +691,18 @@ public class FileManager {
                     String cmd = getResourcePath(getClass(), "exiftool", "exiftool.exe");
                     cmd += " -overwrite_original -category=";
 
-                    if(!tags.isEmpty()){
-                        String firstCmd = cmd + tags.substring(0, tags.length() - 1) + " \"" + df.getPath()+"\"";
+                    if(!tags.isEmpty()) {
+                        String firstCmd = cmd +"\""+ tags.substring(0, tags.length() - 1) + "\" \"" + df.getPath()+"\"";
                         Process p1 = Runtime.getRuntime().exec(firstCmd);
                         p1.waitFor();
-                        callback.run();
+
+                        //if error occurs run the error callback
+                        String error = new String(p1.getErrorStream().readAllBytes());
+                        if(error.toLowerCase().startsWith("error")){
+                            onError.run(error.split(" - ")[0]);
+                        }else {
+                            callback.run();
+                        }
                     }
 
                 }
@@ -716,5 +729,9 @@ public class FileManager {
             }
             callback.run();
         });
+    }
+
+    public boolean isPlayableVideo(DataFile df) {
+        return getDataFileMimeType(df).equals("video/mp4");
     }
 }

@@ -185,7 +185,7 @@
                                           <HBox alignment="CENTER_LEFT" prefWidth="1000.0" spacing="10.0">
                                              <children>
                                                 <TextField fx:id="addSingleTagToFileTextField" minWidth="150.0" onKeyTyped="#removeErrorBorder" promptText="Tag Name..." />
-                                                <Button minWidth="100.0" mnemonicParsing="false" onAction="#addSingleTagToFile" prefHeight="21.0" prefWidth="97.0" text="Tag hinzufügen">
+                                                <Button fx:id="addSingleTagButton" minWidth="100.0" mnemonicParsing="false" onAction="#addSingleTagToFile" prefHeight="21.0" prefWidth="97.0" text="Tag hinzufügen">
                                                    <padding>
                                                       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                    </padding>
@@ -194,34 +194,34 @@
                                           </HBox>
                                           <HBox alignment="CENTER_RIGHT" prefWidth="1000.0" spacing="5.0">
                                              <children>
-                                                <StackPane>
+                                                <StackPane prefWidth="0.0">
                                                    <HBox.margin>
                                                       <Insets />
                                                    </HBox.margin>
                                                    <children>
-                                                      <Button fx:id="addTagsButton" alignment="CENTER_RIGHT" contentDisplay="RIGHT" mnemonicParsing="false" onAction="#addTagsToFile" text="Tags hinzufügen">
+                                                      <Button fx:id="addTagsButton" alignment="CENTER" contentDisplay="RIGHT" minWidth="100.0" mnemonicParsing="false" onAction="#addTagsToFile" text="Tags hinzufügen">
                                                          <padding>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                          </padding>
                                                       </Button>
-                                                      <Button fx:id="saveTagsPreset" mnemonicParsing="false" onAction="#saveTagsPresetClicked" text="Bestätigen" />
+                                                      <Button fx:id="saveTagsPresetButton" alignment="CENTER" minWidth="75.0" mnemonicParsing="false" onAction="#saveAddedPresetTagsClicked" text="Bestätigen" />
                                                    </children>
                                                 </StackPane>
-                                                <StackPane>
+                                                <StackPane prefWidth="0.0">
                                                    <children>
-                                                      <Button fx:id="deletePresetTagsButton" alignment="CENTER_RIGHT" contentDisplay="RIGHT" mnemonicParsing="false" text="Löschen">
+                                                      <Button fx:id="deletePresetTagsButton" alignment="CENTER" contentDisplay="RIGHT" minWidth="75.0" mnemonicParsing="false" text="Löschen">
                                                          <padding>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                          </padding>
                                                       </Button>
-                                                      <Button fx:id="abortTagsAddingButton" alignment="CENTER_RIGHT" contentDisplay="RIGHT" mnemonicParsing="false" onAction="#abortTagsAddingButtonClicked" text="Abbrechen">
+                                                      <Button fx:id="abortTagsAddingButton" alignment="CENTER" contentDisplay="CENTER" minWidth="75.0" mnemonicParsing="false" onAction="#abortTagsAddingButtonClicked" text="Abbrechen">
                                                          <padding>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                          </padding>
                                                       </Button>
                                                    </children>
                                                 </StackPane>
-                                                <Button alignment="CENTER_RIGHT" contentDisplay="RIGHT" mnemonicParsing="false" onAction="#deleteAllTagsPressed" text="Alle löschen">
+                                                <Button alignment="CENTER" contentDisplay="RIGHT" minWidth="75.0" mnemonicParsing="false" onAction="#deleteAllTagsPressed" text="Alle löschen">
                                                    <padding>
                                                       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                    </padding>

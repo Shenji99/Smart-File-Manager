@@ -298,6 +298,10 @@ public class DataFile {
     public void removeAllTags() {
         this.tags.clear();
     }
+
+    public boolean hasTag(String tag) {
+        return this.getTags().contains(tag);
+    }
 }
 
 

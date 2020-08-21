@@ -68,12 +68,15 @@ public class FilePropertyController implements Initializable {
     @FXML public FlowPane presetTagsContainer;
     @FXML public VBox propertiesWrapper;
 
+
+    private HashSet<String> selectedTags;
+    @FXML public Button addSingleTagButton;
     @FXML public TextField addSingleTagToFileTextField;
     @FXML public TextField addTagTextField;
     @FXML public Button addTagsButton;
     @FXML public Button deletePresetTagsButton;
     @FXML public Button abortTagsAddingButton;
-    @FXML public Button saveTagsPreset;
+    @FXML public Button saveTagsPresetButton;
 
     private InvalidationListener videoSliderListener;
     private InvalidationListener volumeSliderListener;
@@ -88,7 +91,7 @@ public class FilePropertyController implements Initializable {
         this.widthHeightLabelValue.setVisible(false);
 
         this.abortTagsAddingButton.setVisible(false);
-        this.saveTagsPreset.setVisible(false);
+        this.saveTagsPresetButton.setVisible(false);
 
         this.controlsWrapper.setPrefWidth(this.mediaView.getFitWidth());
         this.controlsWrapper.setMaxWidth(this.mediaView.getFitWidth());
@@ -175,20 +178,6 @@ public class FilePropertyController implements Initializable {
         this.volumeSlider.valueProperty().addListener(this.volumeSliderListener);
 
     }
-
-
-//    @Override
-//    public void onFileUpdate(DataFile dataFile) {
-//        if(this.pathLabelValue.getText().equals(dataFile.getPath())) {
-//            Platform.runLater(() -> {
-//                try {
-//                    updateFileProperties(dataFile, false);
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//            });
-//        }
-//    }
 
     private void updateSliderValues(MediaPlayer player) {
         Platform.runLater(() -> {
@@ -508,7 +497,6 @@ public class FilePropertyController implements Initializable {
         if(f.isTagsLoaded()){
             setTagsOfFile(f);
         }else {
-
             showTagsLoadingSpinner();
             updateSingleFileTags(f, args -> {
                 //makes sure that the tags are not added to a wrong file property
@@ -676,7 +664,6 @@ public class FilePropertyController implements Initializable {
         this.pauseVideoButton.setVisible(b);
     }
 
-
     private void updatePresetTagList(Set<String> tags) {
         this.presetTagsContainer.getChildren().clear();
         for(String tag: tags){
@@ -695,7 +682,6 @@ public class FilePropertyController implements Initializable {
     public void setMainScreenController(MainScreenController controller) {
         this.mainScreenController = controller;
     }
-
 
     public void addTagToPreset(ActionEvent actionEvent) {
         String tagText = this.addTagTextField.getText();
@@ -718,7 +704,6 @@ public class FilePropertyController implements Initializable {
         this.removeErrorBorder(this.addTagTextField);
     }
 
-    private HashSet<String> selectedTags;
     public void addTagsToFile(ActionEvent actionEvent) {
         selectedTags = new HashSet<String>();
 
@@ -726,35 +711,40 @@ public class FilePropertyController implements Initializable {
         this.deletePresetTagsButton.setVisible(false);
 
         this.abortTagsAddingButton.setVisible(true);
-        this.saveTagsPreset.setVisible(true);
+        this.saveTagsPresetButton.setVisible(true);
 
-        for(Node n: this.presetTagsContainer.getChildren()) {
-            Label l = (Label) ((StackPane)n).getChildren().get(0);
-            n.getStyleClass().add("green-background");
-            n.setCursor(Cursor.HAND);
-            n.setOnMouseClicked(mouseEvent -> {
-                String text = l.getText();
-                this.selectedTags.add(text);
-                n.setDisable(true);
-                Node tagNode = createTagNode(text);
-                tagNode.setId("presetEditTag");
-                tagNode.getStyleClass().add("green-background");
-                tagNode.setCursor(Cursor.HAND);
-                addToFileTagsBox(tagNode, n);
-            });
+        DataFile current = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
+        if(current != null){
+            for(Node n: this.presetTagsContainer.getChildren()) {
+                Label l = (Label) ((StackPane)n).getChildren().get(0);
+                n.getStyleClass().add("green-background");
+                if(!current.hasTag(l.getText())){
+                    n.setCursor(Cursor.HAND);
+                    n.setOnMouseClicked(mouseEvent -> {
+                        String text = l.getText();
+                        this.selectedTags.add(text);
+                        n.setDisable(true);
+                        Node tagNode = createTagNode(text);
+                        tagNode.setId("presetEditTag");
+                        tagNode.getStyleClass().add("green-background");
+                        tagNode.setCursor(Cursor.HAND);
+                        addToFileTagsBox(tagNode, n);
+                    });
+                }else {
+                    n.setDisable(true);
+                }
+            }
         }
+
     }
 
     private void addToFileTagsBox(Node n, Node reference) {
         this.fileTagsBox.getChildren().add(n);
         n.setOnMouseClicked(mouseEvent -> {
             this.fileTagsBox.getChildren().remove(n);
+            this.selectedTags.remove(((Label)((StackPane)n).getChildren().get(0)).getText());
             reference.setDisable(false);
         });
-    }
-
-    public void saveTagsPresetClicked(ActionEvent actionEvent) {
-
     }
 
     private void abortAddingTags(){
@@ -765,7 +755,7 @@ public class FilePropertyController implements Initializable {
         this.addTagsButton.setVisible(true);
         this.deletePresetTagsButton.setVisible(true);
         this.abortTagsAddingButton.setVisible(false);
-        this.saveTagsPreset.setVisible(false);
+        this.saveTagsPresetButton.setVisible(false);
 
         this.fileTagsBox.getChildren().removeIf(n -> n.getId() != null && n.getId().equals("presetEditTag"));
 
@@ -786,15 +776,44 @@ public class FilePropertyController implements Initializable {
     public void addSingleTagToFile(ActionEvent actionEvent) {
         String tagName = this.addSingleTagToFileTextField.getText();
         if(!tagName.isEmpty()){
+            this.hideMediaPlayerVideo();
+            this.addSingleTagButton.setDisable(true);
+            this.addSingleTagToFileTextField.clear();
+
+            if(this.mediaPlayer != null){
+                this.mediaPlayer.dispose();
+            }
+            boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(FileManager.getInstance().findFileByPath(this.pathLabelValue.getText()));
+            if(isPlayableVideo){
+                this.hideMediaPlayerVideo();
+                this.showThumbnailLoadingSpinner();
+            }
+
             DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
             try {
                 this.fileTagsBox.getChildren().clear();
                 this.showTagsLoadingSpinner();
 
                 FileManager.getInstance().addTagToFile(df, tagName, args -> {
-                    Platform.runLater(() -> {
+                    Platform.runLater(() ->{
                         updateTags();
-                        this.addSingleTagToFileTextField.clear();
+                        addSingleTagButton.setDisable(false);
+                        if(isPlayableVideo && pathLabelValue.getText().equals(df.getPath())){
+                            playIcon.setVisible(true);
+                            hideThumbnailLoadingSpinner();
+                        }
+                    });
+                }, error -> {
+                    String msg = (String) error[0];
+                    this.mainScreenController.showError(msg);
+                    df.setTagsLoaded(false);
+                    Platform.runLater(() -> {
+                        addSingleTagButton.setDisable(false);
+                        updateTags(df);
+                        if(isPlayableVideo && pathLabelValue.getText().equals(df.getPath())){
+                            playIcon.setVisible(true);
+                            hideThumbnailLoadingSpinner();
+                        }
                     });
                 });
             } catch (InvalidNameException e) {
@@ -818,5 +837,49 @@ public class FilePropertyController implements Initializable {
         this.showTagsLoadingSpinner();
         DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
         FileManager.getInstance().deleteAllTags(df, args -> Platform.runLater(() -> updateTags()));
+    }
+
+    public void saveAddedPresetTagsClicked(ActionEvent actionEvent) {
+        DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
+        try {
+            this.fileTagsBox.getChildren().clear();
+            this.showTagsLoadingSpinner();
+
+            if(this.mediaPlayer != null){
+                this.mediaPlayer.dispose();
+            }
+
+            boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(df);
+            if(isPlayableVideo){
+                this.hideMediaPlayerVideo();
+                this.showThumbnailLoadingSpinner();
+            }
+
+            FileManager.getInstance().addTagsToFile(df, this.selectedTags, args -> {
+                Platform.runLater(() -> {
+                    updateTags();
+                    abortAddingTags();
+                    if(isPlayableVideo && pathLabelValue.getText().equals(df.getPath())){
+                        playIcon.setVisible(true);
+                        hideThumbnailLoadingSpinner();
+                    }
+                });
+            }, error -> {
+                String msg = (String) error[0];
+                this.mainScreenController.showError(msg);
+                df.setTagsLoaded(false);
+                Platform.runLater(() -> {
+                    updateTags(df);
+                    abortAddingTags();
+                    if(isPlayableVideo && pathLabelValue.getText().equals(df.getPath())){
+                        playIcon.setVisible(true);
+                        hideThumbnailLoadingSpinner();
+                    }
+                });
+            });
+        } catch (InvalidNameException e) {
+            this.mainScreenController.showError(e.getMessage());
+            updateTags();
+        }
     }
 }

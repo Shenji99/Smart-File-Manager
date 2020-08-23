@@ -240,6 +240,7 @@ public class FileManager {
                         DataFile file = (DataFile) o;
                         if(!file.getType().isEmpty()) {
                             filePaths.add("\""+file.getPath()+"\" ");
+                            //makes sure at least one file is existent
                             addedFile = true;
                         }
                     }
@@ -252,6 +253,8 @@ public class FileManager {
                             }
                             runCmd.append(filePaths.get(j));
                             //amount files for each command
+                            // so that one execution of exiftool reads the metadata of multiple files
+                            // to save time (starting exiftool for each file is expensive)
                             if ((j != 0 && j % EXIF_MAX_FILES_FOR_CMD == 0) || j == filePaths.size() - 1) {
                                 //System.out.println(runCmd);
                                 try {
@@ -678,7 +681,7 @@ public class FileManager {
         }
     }
 
-    private void saveFileTags(DataFile df, Callback callback, Callback onError) {
+    private void saveFileTags(DataFile df, Callback success, Callback onError) {
         executor.submit(() -> {
             try {
                 if (df.getTags().size() > 0) {
@@ -704,7 +707,7 @@ public class FileManager {
                         if(error.toLowerCase().startsWith("error")){
                             onError.run(error.split(" - ")[0]);
                         }else {
-                            callback.run();
+                            success.run();
                         }
                     }
 
@@ -744,5 +747,14 @@ public class FileManager {
 
     public Set getPresetTags() {
         return this.presetTags;
+    }
+
+    public void removePresetTags(HashSet<String> selectedToRemoveTags) {
+        selectedToRemoveTags.forEach(s -> this.presetTags.remove(s));
+    }
+
+    public void removeTagsFromFile(DataFile file, Set tags, Callback success, Callback error){
+        file.removeTags(tags);
+        saveFileTags(file, success, error);
     }
 }

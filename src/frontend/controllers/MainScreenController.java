@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.SplitPane;
 import javafx.scene.image.Image;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 public class MainScreenController implements Initializable {
@@ -250,10 +252,49 @@ public class MainScreenController implements Initializable {
         if (file != null) {
             try {
                 fileManager.loadPresetTags(file);
+                this.filePropertyController.abortAddingTags();
             } catch (Exception e) {
                 showError(e.getMessage());
             }
         }
     }
 
+    public void showInformation(String s) {
+        try{
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Information Dialog");
+                alert.setHeaderText(s);
+                alert.showAndWait();
+            });
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public void showConfirmationDialog(String header, String body, Callback onConfirm){
+        showConfirmationDialog(header, body, onConfirm, null);
+    }
+
+    public void showConfirmationDialog(String header, String body, Callback onConfirm, Callback onAbort){
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Bestätigungs Dialog");
+
+        if(header != null && !header.isEmpty()) {
+            alert.setHeaderText(header);
+        }
+        if(body != null && !body.isEmpty()){
+            alert.setContentText(body);
+        }
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.get() == ButtonType.OK){
+            onConfirm.run();
+        } else {
+            if(onAbort != null) {
+                onAbort.run();
+            }
+            alert.close();
+        }
+    }
 }

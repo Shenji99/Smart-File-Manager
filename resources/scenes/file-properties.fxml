@@ -199,17 +199,18 @@
                                                       <Insets />
                                                    </HBox.margin>
                                                    <children>
-                                                      <Button fx:id="addTagsButton" alignment="CENTER" contentDisplay="RIGHT" minWidth="100.0" mnemonicParsing="false" onAction="#addTagsToFile" text="Tags hinzufügen">
+                                                      <Button fx:id="addTagsButton" alignment="CENTER" contentDisplay="RIGHT" minWidth="75.0" mnemonicParsing="false" onAction="#addTagsToFile" text="Tags hinzufügen">
                                                          <padding>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                          </padding>
                                                       </Button>
                                                       <Button fx:id="saveTagsPresetButton" alignment="CENTER" minWidth="75.0" mnemonicParsing="false" onAction="#saveAddedPresetTagsClicked" text="Bestätigen" />
+                                                      <Button fx:id="confirmDeleteFileTagsButton" minWidth="75.0" mnemonicParsing="false" onAction="#confirmDeleteFileTagsButtonClicked" text="Ausgewählte löschen" textAlignment="CENTER" wrapText="true" />
                                                    </children>
                                                 </StackPane>
                                                 <StackPane prefWidth="0.0">
                                                    <children>
-                                                      <Button fx:id="deletePresetTagsButton" alignment="CENTER" contentDisplay="RIGHT" minWidth="75.0" mnemonicParsing="false" text="Löschen">
+                                                      <Button fx:id="deleteFileTagsButton" alignment="CENTER" contentDisplay="RIGHT" minWidth="75.0" mnemonicParsing="false" onAction="#deleteFileTagsButtonClicked" text="Löschen">
                                                          <padding>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                          </padding>
@@ -219,9 +220,14 @@
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                          </padding>
                                                       </Button>
+                                                      <Button fx:id="abortDeletingTagsButton" alignment="CENTER" contentDisplay="CENTER" minWidth="75.0" mnemonicParsing="false" onAction="#abortDeletingTagsButtonClicked" text="Abbrechen">
+                                                         <padding>
+                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                         </padding>
+                                                      </Button>
                                                    </children>
                                                 </StackPane>
-                                                <Button alignment="CENTER" contentDisplay="RIGHT" minWidth="75.0" mnemonicParsing="false" onAction="#deleteAllTagsPressed" text="Alle löschen">
+                                                <Button fx:id="deleteAllTagsButton" alignment="CENTER" contentDisplay="RIGHT" minWidth="75.0" mnemonicParsing="false" onAction="#deleteAllTagsPressed" text="Alle löschen">
                                                    <padding>
                                                       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                    </padding>
@@ -275,11 +281,30 @@
                                           <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                                        </HBox.margin>
                                     </HBox>
-                                    <HBox alignment="CENTER_RIGHT" prefWidth="1000.0">
+                                    <HBox alignment="CENTER_RIGHT" prefWidth="1000.0" spacing="10.0">
                                        <children>
                                           <StackPane>
                                              <children>
-                                                <Button alignment="CENTER_RIGHT" contentDisplay="RIGHT" mnemonicParsing="false" onAction="#deletePresetTagsButtonClicked" text="Löschen">
+                                                <Button fx:id="deleteSelectedPresetTagsButton" alignment="CENTER_RIGHT" contentDisplay="RIGHT" mnemonicParsing="false" onAction="#deleteSelectedPresetTags" text="Bestätigen">
+                                                   <padding>
+                                                      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                   </padding>
+                                                </Button>
+                                                <Button fx:id="confirmDeleteFilePresetTagsButton" alignment="CENTER_RIGHT" contentDisplay="RIGHT" mnemonicParsing="false" onAction="#confirmDeleteFilePresetTagsButtonClicked" text="Ausgewählte löschen">
+                                                   <padding>
+                                                      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                   </padding>
+                                                </Button>
+                                             </children>
+                                          </StackPane>
+                                          <StackPane>
+                                             <children>
+                                                <Button fx:id="abortDeletePresetTagsButton" alignment="CENTER_RIGHT" contentDisplay="RIGHT" mnemonicParsing="false" onAction="#abortDeletePresetTagsButtonClicked" text="Abbrechen">
+                                                   <padding>
+                                                      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                   </padding>
+                                                </Button>
+                                                <Button fx:id="deletePresetTagsButton" alignment="CENTER_RIGHT" contentDisplay="RIGHT" mnemonicParsing="false" onAction="#deletePresetTagsButtonClicked" text="Löschen">
                                                    <padding>
                                                       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                    </padding>

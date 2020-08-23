@@ -302,6 +302,12 @@ public class DataFile {
     public boolean hasTag(String tag) {
         return this.getTags().contains(tag);
     }
+
+    public void removeTags(Set<String> tags) {
+        for (String tag : tags) {
+            this.tags.remove(tag);
+        }
+    }
 }
 
 

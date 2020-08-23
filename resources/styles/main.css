@@ -16,17 +16,11 @@
 	-fx-label-text-color: white;
 }
 
-.label {
-	-fx-text-fill: white;
-	-fx-font-size: 12px;
-}
 
-.tag {
-	-fx-padding: 5px;
-	-fx-background-color: -fx-primary-purple;
-	-fx-border-radius: 100 100 10 10;
-	-fx-opacity: 1.0;
-}
+/***********************************************************
+						Backgrounds
+***********************************************************/
+
 
 .dark-background {
     -fx-background-color: -fx-dark-grey;
@@ -41,6 +35,36 @@
 
 .light-grey-bg {
 	-fx-background-color: -fx-ligther-grey;
+}
+
+.green-background {
+	-fx-background-color: seagreen;
+}
+
+.red-background {
+	-fx-background-color: darkred;
+}
+
+.primary-purple-background {
+	-fx-background-color: -fx-primary-purple;
+}
+
+
+
+
+/***********************************************************
+					List and Stuff
+***********************************************************/
+
+.label {
+	-fx-text-fill: white;
+	-fx-font-size: 12px;
+}
+
+.tag {
+	-fx-padding: 5px;
+	-fx-border-radius: 100 100 10 10;
+	-fx-opacity: 1.0;
 }
 
 .list-cell .label{
@@ -132,9 +156,6 @@
 }
 
 
-.green-background {
-	-fx-background-color: seagreen;
-}
 
 
 /***********************************************************

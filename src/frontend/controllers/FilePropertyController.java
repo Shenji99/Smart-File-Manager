@@ -10,6 +10,7 @@ import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
@@ -67,15 +68,27 @@ public class FilePropertyController implements Initializable {
     @FXML public FlowPane presetTagsContainer;
     @FXML public VBox propertiesWrapper;
 
-    private HashSet<String> selectedTags;
+    @FXML public Button confirmDeleteFileTagsButton;
+    @FXML public Button deleteAllTagsButton;
+    @FXML public Button abortDeletingTagsButton;
     @FXML public Button addTagPresetButton;
     @FXML public Button addSingleTagButton;
     @FXML public TextField addSingleTagToFileTextField;
+    @FXML public Button confirmDeleteFilePresetTagsButton;
     @FXML public TextField addTagTextField;
+    @FXML public Button deleteFileTagsButton;
     @FXML public Button addTagsButton;
     @FXML public Button deletePresetTagsButton;
     @FXML public Button abortTagsAddingButton;
     @FXML public Button saveTagsPresetButton;
+
+    @FXML public Button deleteSelectedPresetTagsButton;
+    @FXML public Button abortDeletePresetTagsButton;
+
+
+    private HashSet<String> selectedTags;
+    private HashSet<String> selectedToRemovePresetTags;
+    private HashSet<String> selectedToRemoveFileTags;
 
     private InvalidationListener videoSliderListener;
     private InvalidationListener volumeSliderListener;
@@ -88,9 +101,12 @@ public class FilePropertyController implements Initializable {
 
         this.widthHeightLabel.setVisible(false);
         this.widthHeightLabelValue.setVisible(false);
-
         this.abortTagsAddingButton.setVisible(false);
         this.saveTagsPresetButton.setVisible(false);
+        this.deleteSelectedPresetTagsButton.setVisible(false);
+        this.abortDeletePresetTagsButton.setVisible(false);
+        this.abortDeletingTagsButton.setVisible(false);
+        this.confirmDeleteFileTagsButton.setVisible(false);
 
         this.controlsWrapper.setPrefWidth(this.mediaView.getFitWidth());
         this.controlsWrapper.setMaxWidth(this.mediaView.getFitWidth());
@@ -318,6 +334,7 @@ public class FilePropertyController implements Initializable {
         updateTypeValueLabel(f);
         updateChangeDateValueLabel(f);
         abortAddingTags();
+        abortDeletingPresetTags();
 
         String mimeType = FileManager.getDataFileMimeType(f);
         if (mimeType != null) {
@@ -492,9 +509,13 @@ public class FilePropertyController implements Initializable {
     }
 
     private void updateTags(DataFile f) {
-        this.fileTagsBox.getChildren().clear();
+        //solve differently that the user can still add tags from preset
+        this.abortAddingTags();
+
         if (f.isTagsLoaded()) {
-            setTagsOfFile(f);
+//            synchronized (this){
+                setTagsOfFile(f);
+//            }
         } else {
             showTagsLoadingSpinner();
             updateSingleFileTags(f, args -> {
@@ -564,6 +585,7 @@ public class FilePropertyController implements Initializable {
     }
 
     private void setTagsOfFile(DataFile f) {
+        this.fileTagsBox.getChildren().clear();
         List<String> tags = f.getTags();
         for (String tag : tags) {
             this.fileTagsBox.getChildren().add(createTagNode(tag));
@@ -577,7 +599,13 @@ public class FilePropertyController implements Initializable {
         FlowPane.setMargin(stackpane, new Insets(3));
         l.setPadding(new Insets(3));
         l.setAlignment(Pos.CENTER);
-        stackpane.getStyleClass().add("tag");
+        if(!stackpane.getStyleClass().contains("tag")){
+            stackpane.getStyleClass().add("tag");
+        }
+
+        if(!stackpane.getStyleClass().contains("primary-purple-background")){
+            stackpane.getStyleClass().add("primary-purple-background");
+        }
         return stackpane;
     }
 
@@ -643,6 +671,10 @@ public class FilePropertyController implements Initializable {
 
     public void clearPanel() {
         this.propertiesWrapper.setVisible(false);
+        this.hideMediaPlayerVideo();
+        if (this.mediaView != null && this.mediaView.getMediaPlayer() != null) {
+            this.mediaView.getMediaPlayer().dispose();
+        }
     }
 
     private void setMediaControlVisibility(boolean b) {
@@ -712,7 +744,9 @@ public class FilePropertyController implements Initializable {
         selectedTags = new HashSet<String>();
 
         this.addTagsButton.setVisible(false);
-        this.deletePresetTagsButton.setVisible(false);
+        this.deleteFileTagsButton.setVisible(false);
+        this.deletePresetTagsButton.setDisable(true);
+        this.addTagPresetButton.setDisable(true);
 
         this.abortTagsAddingButton.setVisible(true);
         this.saveTagsPresetButton.setVisible(true);
@@ -721,7 +755,10 @@ public class FilePropertyController implements Initializable {
         if (current != null) {
             for (Node n : this.presetTagsContainer.getChildren()) {
                 Label l = (Label) ((StackPane) n).getChildren().get(0);
-                n.getStyleClass().add("green-background");
+                n.getStyleClass().remove("primary-purple-background");
+                if(!n.getStyleClass().contains("green-background")){
+                    n.getStyleClass().add("green-background");
+                }
                 if (!current.hasTag(l.getText())) {
                     n.setCursor(Cursor.HAND);
                     n.setOnMouseClicked(mouseEvent -> {
@@ -730,7 +767,10 @@ public class FilePropertyController implements Initializable {
                         n.setDisable(true);
                         Node tagNode = createTagNode(text);
                         tagNode.setId("presetEditTag");
-                        tagNode.getStyleClass().add("green-background");
+                        tagNode.getStyleClass().remove("primary-purple-background");
+                        if(!tagNode.getStyleClass().contains("green-background")){
+                            tagNode.getStyleClass().add("green-background");
+                        }
                         tagNode.setCursor(Cursor.HAND);
                         addToFileTagsBox(tagNode, n);
                     });
@@ -751,15 +791,17 @@ public class FilePropertyController implements Initializable {
         });
     }
 
-    private void abortAddingTags() {
+    public void abortAddingTags() {
         if (selectedTags != null) {
             selectedTags.clear();
         }
 
         this.addTagsButton.setVisible(true);
-        this.deletePresetTagsButton.setVisible(true);
+        this.deleteFileTagsButton.setVisible(true);
         this.abortTagsAddingButton.setVisible(false);
         this.saveTagsPresetButton.setVisible(false);
+        this.deletePresetTagsButton.setDisable(false);
+        this.addTagPresetButton.setDisable(false);
 
         this.fileTagsBox.getChildren().removeIf(n -> n.getId() != null && n.getId().equals("presetEditTag"));
 
@@ -769,6 +811,9 @@ public class FilePropertyController implements Initializable {
             n.setCursor(Cursor.DEFAULT);
             n.setOnMouseClicked(null);
             n.getStyleClass().remove("green-background");
+            if(!n.getStyleClass().contains("primary-purple-background")){
+                n.getStyleClass().add("primary-purple-background");
+            }
             n.setDisable(false);
         });
     }
@@ -783,43 +828,76 @@ public class FilePropertyController implements Initializable {
     }
 
     public void deletePresetTagsButtonClicked(ActionEvent actionEvent) {
+        abortAddingTags();
+        this.selectedToRemovePresetTags = new HashSet<>();
 
+        this.addTagsButton.setDisable(true);
+        this.addTagPresetButton.setDisable(true);
+        this.deleteSelectedPresetTagsButton.setDisable(true);
+        this.deleteFileTagsButton.setDisable(true);
+
+        this.abortDeletePresetTagsButton.setVisible(true);
+        this.deletePresetTagsButton.setVisible(false);
+        this.confirmDeleteFilePresetTagsButton.setVisible(true);
+
+        for (Node n : this.presetTagsContainer.getChildren()) {
+            Label l = (Label) ((StackPane) n).getChildren().get(0);
+            n.getStyleClass().remove("primary-purple-background");
+            if(!n.getStyleClass().contains("green-background")){
+                n.getStyleClass().add("green-background");
+            }
+
+            n.setCursor(Cursor.HAND);
+            n.setOnMouseClicked(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent mouseEvent) {
+                    EventHandler<MouseEvent> that = this;
+                    String text = l.getText();
+                    selectedToRemovePresetTags.add(text);
+                    FilePropertyController.this.selectedToRemovePresetTags.add(text);
+                    n.getStyleClass().remove("green-background");
+                    if(!n.getStyleClass().contains("red-background")){
+                        n.getStyleClass().add("red-background");
+                    }
+                    n.setOnMouseClicked(mouseEvent1 -> {
+                        n.getStyleClass().remove("red-background");
+                        if(!n.getStyleClass().contains("green-background")){
+                            n.getStyleClass().add("green-background");
+                        }
+                        selectedToRemovePresetTags.remove(text);
+                        n.setOnMouseClicked(that);
+                    });
+                }
+            });
+        }
     }
+
 
     public void addSingleTagToFile(ActionEvent actionEvent) {
         String tagName = this.addSingleTagToFileTextField.getText();
         if (!tagName.isEmpty()) {
-            this.hideMediaPlayerVideo();
-            this.addSingleTagButton.setDisable(true);
-            this.addSingleTagToFileTextField.clear();
 
-            this.showTagsLoadingSpinner();
+            prepareFileForUpdate();
 
-            if (this.mediaPlayer != null) {
-                this.mediaPlayer.dispose();
-            }
             boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(FileManager.getInstance().findFileByPath(this.pathLabelValue.getText()));
-            if (isPlayableVideo) {
-                this.hideMediaPlayerVideo();
-                this.playIcon.setVisible(false);
-            }
-
             DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
             try {
                 FileManager.getInstance().addTagToFile(df, tagName, callback -> {
-                    addSingleTagButton.setDisable(false);
                     Platform.runLater(() -> {
-                        if (isPlayableVideo && pathLabelValue.getText().equals(df.getPath())) {
+                        addSingleTagButton.setDisable(false);
+                        if(pathLabelValue.getText().equals(df.getPath())){
                             updateTags();
-                            playIcon.setVisible(true);
+                            if (isPlayableVideo) {
+                                playIcon.setVisible(true);
+                            }
                         }
                     });
                 }, error -> {
                     String msg = (String) error[0];
                     this.mainScreenController.showError(msg);
                     df.setTagsLoaded(false);
-                    addSingleTagButton.setDisable(false);
                     Platform.runLater(() -> {
+                        addSingleTagButton.setDisable(false);
                         if (pathLabelValue.getText().equals(df.getPath())) {
                             updateTags();
                             if(isPlayableVideo){
@@ -860,25 +938,27 @@ public class FilePropertyController implements Initializable {
 
             FileManager.getInstance().addTagsToFile(df, this.selectedTags, callback -> {
                 Platform.runLater(() -> {
-                    updateTags();
-                    abortAddingTags();
-                    if (isPlayableVideo && pathLabelValue.getText().equals(df.getPath())) {
-                        playIcon.setVisible(true);
+                    if(pathLabelValue.getText().equals(df.getPath())) {
+                        updateTags();
+                        abortAddingTags();
+                        if (isPlayableVideo) {
+                            playIcon.setVisible(true);
+                        }
                     }
                 });
             }, error -> {
                 String msg = (String) error[0];
                 this.mainScreenController.showError(msg);
                 df.setTagsLoaded(false);
-                if (pathLabelValue.getText().equals(df.getPath())) {
-                    Platform.runLater(() -> {
+                Platform.runLater(() -> {
+                    if (pathLabelValue.getText().equals(df.getPath())) {
                         abortAddingTags();
                         updateTags();
-                        if(isPlayableVideo){
+                        if (isPlayableVideo) {
                             playIcon.setVisible(true);
                         }
-                    });
-                }
+                    }
+                });
             });
         } catch (InvalidNameException e) {
             this.mainScreenController.showError(e.getMessage());
@@ -890,27 +970,19 @@ public class FilePropertyController implements Initializable {
         }
     }
 
-
     public void deleteAllTagsPressed(ActionEvent actionEvent) {
         DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
 
         if(df.getTags().size() > 0){
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Bestätigungs Dialog");
-            alert.setHeaderText("Möchtest du wirklich alle Tags der Datei löschen?");
-
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.get() == ButtonType.OK){
+            mainScreenController.showConfirmationDialog("Möchtest du wirklich alle Tags der Datei löschen?", "", onConfirm -> {
                 this.fileTagsBox.getChildren().clear();
                 this.showTagsLoadingSpinner();
-                FileManager.getInstance().deleteAllTags(df, callback -> Platform.runLater(() -> {
+                FileManager.getInstance().deleteAllTags(df, callback2 -> Platform.runLater(() -> {
                     if(df.getPath().equals(this.pathLabelValue.getText())){
                         updateTags();
                     }
                 }));
-            } else {
-                alert.close();
-            }
+            });
         }
     }
 
@@ -966,5 +1038,182 @@ public class FilePropertyController implements Initializable {
         if(keyEvent.getCode() == KeyCode.ENTER){
             addSingleTagToFile(null);
         }
+    }
+
+    public void deleteSelectedPresetTags(ActionEvent actionEvent) {
+    }
+
+    public void abortDeletePresetTagsButtonClicked(ActionEvent actionEvent) {
+        abortDeletingPresetTags();
+    }
+
+    private void abortDeletingPresetTags() {
+        try {
+            if(this.selectedToRemovePresetTags != null){
+                this.selectedToRemovePresetTags.clear();
+            }
+            this.addTagsButton.setDisable(false);
+            this.addTagPresetButton.setDisable(false);
+            this.deleteSelectedPresetTagsButton.setDisable(false);
+            this.deleteFileTagsButton.setDisable(false);
+            this.confirmDeleteFilePresetTagsButton.setVisible(false);
+
+            this.abortDeletePresetTagsButton.setVisible(false);
+            this.deletePresetTagsButton.setVisible(true);
+
+            this.presetTagsContainer.getChildren().forEach(n -> {
+                n.setCursor(Cursor.DEFAULT);
+                n.setOnMouseClicked(null);
+                n.getStyleClass().remove("green-background");
+                n.getStyleClass().remove("red-background");
+                if(!n.getStyleClass().contains("primary-purple-background")){
+                    n.getStyleClass().add("primary-purple-background");
+                }
+                n.setDisable(false);
+            });
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
+    public void confirmDeleteFilePresetTagsButtonClicked(ActionEvent actionEvent) {
+        if(this.selectedToRemovePresetTags != null && this.selectedToRemovePresetTags.size() > 0){
+            this.mainScreenController.showConfirmationDialog("Möchtest du wirklich alle ausgewählten Tags löschen?", "", onConfirm -> {
+                FileManager.getInstance().removePresetTags(this.selectedToRemovePresetTags);
+                updatePresetTagList(FileManager.getInstance().getPresetTags());
+                abortDeletingPresetTags();
+            });
+        }else {
+            this.mainScreenController.showInformation("Keine Tags ausgewählt!");
+        }
+    }
+
+    public void deleteFileTagsButtonClicked(ActionEvent actionEvent) {
+        selectedToRemoveFileTags = new HashSet<>();
+
+        abortAddingTags();
+        abortDeletingPresetTags();
+
+        this.addSingleTagButton.setDisable(true);
+        this.deleteAllTagsButton.setDisable(true);
+        this.deletePresetTagsButton.setDisable(true);
+
+        this.addTagsButton.setVisible(false);
+        this.abortDeletingTagsButton.setVisible(true);
+        this.confirmDeleteFileTagsButton.setVisible(true);
+
+        this.fileTagsBox.getChildren().forEach(n -> {
+            Label l = (Label) ((StackPane) n).getChildren().get(0);
+
+            n.getStyleClass().remove("primary-purple-background");
+            if(!n.getStyleClass().contains("green-background")){
+                n.getStyleClass().add("green-background");
+            }
+            n.setCursor(Cursor.HAND);
+            n.setOnMouseClicked(new EventHandler<MouseEvent>() {
+                EventHandler<MouseEvent> that = this;
+
+                @Override
+                public void handle(MouseEvent mouseEvent) {
+                    selectedToRemoveFileTags.add(l.getText());
+                    n.getStyleClass().remove("green-background");
+                    if (!n.getStyleClass().contains("red-background")) {
+                        n.getStyleClass().add("red-background");
+                    }
+
+                    n.setOnMouseClicked(mouseEvent1 -> {
+                        selectedToRemoveFileTags.remove(l.getText());
+                        n.getStyleClass().remove("red-background");
+                        if (!n.getStyleClass().contains("green-background")) {
+                            n.getStyleClass().add("green-background");
+                        }
+                        n.setOnMouseClicked(that);
+                    });
+                }
+            });
+        });
+    }
+
+    public void abortDeletingTagsButtonClicked(ActionEvent actionEvent) {
+        abortDeletingFileTags();
+    }
+
+    private void prepareFileForUpdate() {
+        this.hideMediaPlayerVideo();
+        this.addSingleTagButton.setDisable(true);
+        this.addSingleTagToFileTextField.clear();
+
+        this.showTagsLoadingSpinner();
+
+        if (this.mediaPlayer != null) {
+            this.mediaPlayer.dispose();
+        }
+        boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(FileManager.getInstance().findFileByPath(this.pathLabelValue.getText()));
+        if (isPlayableVideo) {
+            this.playIcon.setVisible(false);
+        }
+    }
+
+    public void confirmDeleteFileTagsButtonClicked(ActionEvent actionEvent) {
+        if(this.selectedToRemoveFileTags != null && this.selectedToRemoveFileTags.size() > 0){
+            this.mainScreenController.showConfirmationDialog("Möchtest du wirklich alle ausgewählten Tags löschen?", "", onConfirm -> {
+                this.saveTagsPresetButton.setDisable(true);
+                this.abortDeletingTagsButton.setDisable(true);
+                prepareFileForUpdate();
+                boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(FileManager.getInstance().findFileByPath(this.pathLabelValue.getText()));
+                DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
+
+                FileManager.getInstance().removeTagsFromFile(df, this.selectedToRemoveFileTags, callback-> {
+                    Platform.runLater(() -> {
+                        if(pathLabelValue.getText().equals(df.getPath())) {
+                            updateTags();
+                            abortAddingTags();
+                            if (isPlayableVideo) {
+                                playIcon.setVisible(true);
+                            }
+                        }
+                        abortDeletingFileTags();
+                    });
+                }, onError -> {
+                    String msg = (String) onError[0];
+                    this.mainScreenController.showError(msg);
+                    df.setTagsLoaded(false);
+                    Platform.runLater(() -> {
+                        if (pathLabelValue.getText().equals(df.getPath())) {
+                            abortAddingTags();
+                            updateTags();
+                            if (isPlayableVideo) {
+                                playIcon.setVisible(true);
+                            }
+                        }
+                        abortDeletingFileTags();
+                    });
+                });
+
+            });
+        }else {
+            this.mainScreenController.showInformation("Keine Tags ausgewählt!");
+        }
+    }
+
+    private void abortDeletingFileTags() {
+        this.addSingleTagButton.setDisable(false);
+        this.deleteAllTagsButton.setDisable(false);
+        this.deletePresetTagsButton.setDisable(false);
+
+        this.addTagsButton.setVisible(true);
+        this.abortDeletingTagsButton.setVisible(false);
+        this.confirmDeleteFileTagsButton.setVisible(false);
+
+        this.fileTagsBox.getChildren().forEach(n -> {
+            n.setCursor(Cursor.DEFAULT);
+            n.setOnMouseClicked(null);
+            n.getStyleClass().remove("red-background");
+            n.getStyleClass().remove("green-background");
+            if(!n.getStyleClass().contains("primary-purple-background")){
+                n.getStyleClass().add("primary-purple-background");
+            }
+        });
     }
 }

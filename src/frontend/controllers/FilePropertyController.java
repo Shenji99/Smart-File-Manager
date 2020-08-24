@@ -63,6 +63,8 @@ public class FilePropertyController implements Initializable {
     @FXML public Label widthHeightLabelValue;
     @FXML public Label typeLabelValue;
     @FXML public Label changeDateLabel;
+    @FXML public Label artistsLabel;
+    @FXML public Label artistsLabelValue;
 
     @FXML public FlowPane fileTagsBox;
     @FXML public FlowPane presetTagsContainer;
@@ -101,6 +103,9 @@ public class FilePropertyController implements Initializable {
 
         this.widthHeightLabel.setVisible(false);
         this.widthHeightLabelValue.setVisible(false);
+        this.artistsLabel.setVisible(false);
+        this.artistsLabelValue.setVisible(false);
+
         this.abortTagsAddingButton.setVisible(false);
         this.saveTagsPresetButton.setVisible(false);
         this.deleteSelectedPresetTagsButton.setVisible(false);
@@ -337,20 +342,53 @@ public class FilePropertyController implements Initializable {
         abortDeletingPresetTags();
 
         String mimeType = FileManager.getDataFileMimeType(f);
-        if (mimeType != null) {
-            this.playIcon.setVisible(mimeType.equals("video/mp4")); //only enable playicon at mp4 vids
+        this.playIcon.setVisible(mimeType.equals("video/mp4")); //only enable playicon at mp4 vids
 
-            if (mimeType.startsWith("video") || mimeType.startsWith("image")) {
-                updateWidthHeightLabel(f);
-            } else {
-                this.widthHeightLabel.setVisible(false);
-                this.widthHeightLabelValue.setVisible(false);
-            }
+        if (mimeType.startsWith("video") || mimeType.startsWith("image")) {
+            updateWidthHeightLabel(f);
+            updateArtistsLabel(f);
+        } else {
+            this.widthHeightLabel.setVisible(false);
+            this.widthHeightLabelValue.setVisible(false);
+            this.artistsLabel.setVisible(false);
+            this.artistsLabelValue.setVisible(false);
         }
 
         this.updateTags(f);
         if (updateThumbnail) {
             this.updateThumbnail(f, true);
+        }
+    }
+
+    private void updateArtistsLabel(DataFile f) {
+        if(f.isArtistsLoaded()){
+            this.artistsLabel.setVisible(true);
+            this.artistsLabelValue.setVisible(true);
+            this.artistsLabelValue.setText(f.getArtistsAsString());
+        }else {
+            this.artistsLabelValue.setVisible(false);
+            StackPane wrapper = (StackPane) this.artistsLabelValue.getParent();
+            wrapper.getChildren().add(mainScreenController.createLodingSpinner(20, 20));
+            executor.submit(() -> {
+                try {
+                    String res = FileManager.getArtists(f);
+                    Platform.runLater(() -> {
+                        if (!res.isEmpty() && f.getPath().equals(this.pathLabelValue.getText())) {
+                            this.artistsLabel.setVisible(true);
+                            this.artistsLabelValue.setVisible(true);
+                            String[] artists = res.split(":")[1].split(",");
+                            for(String artist: artists){
+                                f.addArtist(artist.trim());
+                            }
+                            f.setArtistsLoaded(true);
+                            this.artistsLabelValue.setText(f.getArtistsAsString());
+                        }
+                        wrapper.getChildren().removeIf(n -> n instanceof ImageView);
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
         }
     }
 
@@ -446,7 +484,7 @@ public class FilePropertyController implements Initializable {
             try {
                 String res = FileManager.getResolution(f);
                 Platform.runLater(() -> {
-                    if (!res.isEmpty()) {
+                    if (!res.isEmpty() && f.getPath().equals(this.pathLabelValue.getText())) {
                         this.widthHeightLabel.setVisible(true);
                         this.widthHeightLabelValue.setVisible(true);
                         String[] res2 = res.split("x");
@@ -923,23 +961,14 @@ public class FilePropertyController implements Initializable {
         }
         DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
         try {
-            this.fileTagsBox.getChildren().clear();
-            this.showTagsLoadingSpinner();
-
-            if (this.mediaPlayer != null) {
-                this.mediaPlayer.dispose();
-            }
-
+            prepareFileForUpdate();
             boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(df);
-            if (isPlayableVideo) {
-                this.hideMediaPlayerVideo();
-                this.playIcon.setVisible(false);
-            }
 
             FileManager.getInstance().addTagsToFile(df, this.selectedTags, callback -> {
                 Platform.runLater(() -> {
                     if(pathLabelValue.getText().equals(df.getPath())) {
                         updateTags();
+                        this.addSingleTagButton.setDisable(false);
                         abortAddingTags();
                         if (isPlayableVideo) {
                             playIcon.setVisible(true);
@@ -953,6 +982,7 @@ public class FilePropertyController implements Initializable {
                 Platform.runLater(() -> {
                     if (pathLabelValue.getText().equals(df.getPath())) {
                         abortAddingTags();
+                        this.addSingleTagButton.setDisable(false);
                         updateTags();
                         if (isPlayableVideo) {
                             playIcon.setVisible(true);
@@ -970,16 +1000,21 @@ public class FilePropertyController implements Initializable {
         }
     }
 
+
     public void deleteAllTagsPressed(ActionEvent actionEvent) {
         DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
+        boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(df);
 
         if(df.getTags().size() > 0){
             mainScreenController.showConfirmationDialog("Möchtest du wirklich alle Tags der Datei löschen?", "", onConfirm -> {
-                this.fileTagsBox.getChildren().clear();
-                this.showTagsLoadingSpinner();
+                prepareFileForUpdate();
                 FileManager.getInstance().deleteAllTags(df, callback2 -> Platform.runLater(() -> {
                     if(df.getPath().equals(this.pathLabelValue.getText())){
                         updateTags();
+                        this.addSingleTagButton.setDisable(false);
+                        if(isPlayableVideo){
+                            playIcon.setVisible(true);
+                        }
                     }
                 }));
             });

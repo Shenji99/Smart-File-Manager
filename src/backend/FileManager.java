@@ -54,6 +54,15 @@ public class FileManager {
         return instance;
     }
 
+    public static String getArtists(DataFile f) throws IOException, InterruptedException {
+        String cmd = getResourcePath(FileManager.class, "exiftool", "exiftool.exe");
+                    cmd += " -L -S -m -q -fast2 -artist ";
+                    cmd += "\""+f.getPath()+"\"";
+        Process p = Runtime.getRuntime().exec(cmd);
+        p.waitFor();
+        return new String(p.getInputStream().readAllBytes());
+    }
+
     public ArrayList<DataFile> getFiles(String path) {
         try {
             path = path.replace("[", "");
@@ -210,12 +219,12 @@ public class FileManager {
 
     /**
      * this method splits all files into a list of sublists with equally distributed files
-     * for example: [1,2,3,4,5,6,7] -> [1,2], [3,4], [5,6], [7]
+     * for example: [1,2,3,4,5,6,7] -> [1,5], [2,6], [3,7], [4]
      * each list gets processed by a separate thread
-     * each thread builds the exiftool command. Each command contains "maxFileAmountForCmd" files
+     * each thread builds the exiftool command. Each command contains "maxFileAmountForCmd" amount of files
      * (to not reach maximum cmd line length)
      * It is important to process as many files at a time as possible to reduce computational resources. (opening exiftool is expensive)
-     * The threads then process all the files and extract the tags (Category) and adds them to the files tag field
+     * The threads then processes all the files and extracts the tags (Category) and adds them to the files tag arraylist
      * After all Threads are finished the callback method gets run
      */
     public void loadTagsInThread(List files, Callback callback) {
@@ -232,7 +241,7 @@ public class FileManager {
             if(li.size() > 0) {
                 new Thread(() -> {
                     String cmd = getResourcePath(getClass(), "exiftool", "exiftool.exe");
-                    cmd += " -L -S -m -q -fast2 -fileName -directory -category ";
+                    cmd += " -L -S -m -q -fast2 -fileName -directory -category -artist ";
 
                     boolean addedFile = false;
                     LinkedList<String> filePaths = new LinkedList<>();
@@ -309,6 +318,7 @@ public class FileManager {
      */
     public void updateFiles(String res) throws UnexpectedErrorException, InvalidNameException {
         res = res.trim();
+//        System.out.println(res);
         if(res.isEmpty()){
             throw new UnexpectedErrorException("Tags konnten nicht geladen werden\n(Vielleicht ungültiger Dateiname?)");
         }
@@ -318,6 +328,10 @@ public class FileManager {
             String dir = lines[i+1].split(": ")[1].strip();
             String path = (dir+"/"+name).replace("/", "\\");
             DataFile file = findFileByPath(path);
+
+            boolean hasCategory = false;
+            boolean hasArtist = false;
+
             if(file != null){
                 //category for videos
                 file.removeAllTags();
@@ -327,10 +341,33 @@ public class FileManager {
                         for(String tag: categories) {
                             file.addTag(tag.trim());
                         }
+                        hasCategory = true;
+                    }
+
+                    int artistIndex = 3;
+                    if(!hasCategory){
+                        artistIndex = 2;
+                    }
+
+                    if(i+artistIndex <= lines.length-1) {
+                        if (lines[i + artistIndex] != null && (lines[i + artistIndex].startsWith("Artist"))) {
+                            String[] artists = lines[i + artistIndex].split(":")[1].strip().split(",");
+                            for (String artist : artists) {
+                                file.addArtist(artist.trim());
+                            }
+                            hasArtist = true;
+                        }
+                    }
+
+                    if(hasCategory){
+                        i++;
+                    }
+                    if(hasArtist){
                         i++;
                     }
                 }
                 file.setTagsLoaded(true);
+                file.setArtistsLoaded(true);
             }
         }
     }
@@ -548,7 +585,7 @@ public class FileManager {
 
     public static Image createThumbnail(DataFile f, String outpath) throws IOException, InterruptedException, UnexpectedErrorException {
         String mimetype = FileManager.getDataFileMimeType(f);
-        if(mimetype != null) {
+        if(!mimetype.isEmpty()) {
             String[] mimetypeSplit = mimetype.split("/");
             String type = mimetypeSplit[0];
             String ending = mimetypeSplit[1];
@@ -596,7 +633,7 @@ public class FileManager {
                 return "image/gif";
             case "txt":
                 return "text/txt";
-            default: return null;
+            default: return "";
         }
     }
 

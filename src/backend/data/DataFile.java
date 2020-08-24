@@ -19,6 +19,8 @@ import java.util.*;
 
 public class DataFile {
 
+    private DataFile parent;
+
     private String name;
     private long size;
     private FileTime changeDate;
@@ -26,10 +28,11 @@ public class DataFile {
     private String path;
 
     private ArrayList<String> tags;
-    private boolean tagsLoaded;
+    private ArrayList<String> artists;
     private ArrayList<DataFile> files;
 
-    private DataFile parent;
+    private boolean tagsLoaded;
+    private boolean artistsLoaded;
 
     //only for image and video
     private int width, height;
@@ -37,7 +40,9 @@ public class DataFile {
     public DataFile() {
         this.files = new ArrayList<>();
         this.tags = new ArrayList<>();
+        this.artists = new ArrayList<>();
         this.tagsLoaded = false;
+        this.artistsLoaded = false;
     }
 
     public DataFile(DataFile parent, File file) throws IOException {
@@ -307,6 +312,35 @@ public class DataFile {
         for (String tag : tags) {
             this.tags.remove(tag);
         }
+    }
+
+    public void addArtist(String artist) {
+        if(!this.artists.contains(artist)){
+            this.artists.add(artist);
+        }
+    }
+
+    public List getArtists() {
+        return this.artists;
+    }
+
+    public String getArtistsAsString() {
+        String str = "";
+        for(int i = 0; i < artists.size(); i++){
+            str += artists.get(i);
+            if(i != artists.size()-1){
+                str += ", ";
+            }
+        }
+        return str;
+    }
+
+    public boolean isArtistsLoaded() {
+        return artistsLoaded;
+    }
+
+    public void setArtistsLoaded(boolean b) {
+        this.artistsLoaded = b;
     }
 }
 

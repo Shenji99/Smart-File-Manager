@@ -85,7 +85,7 @@
             <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
          </padding>
       </StackPane>
-      <SplitPane dividerPositions="0.546875" prefHeight="115.0" prefWidth="322.0" style="-fx-background-color: transparent;">
+      <SplitPane dividerPositions="0.546875" minWidth="135.0" prefHeight="135.0" prefWidth="564.0" style="-fx-background-color: transparent;">
          <items>
             <GridPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity">
                <columnConstraints>
@@ -124,7 +124,7 @@
                   <Label fx:id="widthHeightLabel" maxWidth="Infinity" styleClass="file-property" text="Breite/Höhe:" GridPane.rowIndex="3" />
                   <StackPane alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="3">
                      <children>
-                        <Label fx:id="widthHeightLabelValue" styleClass="file-property-value" StackPane.alignment="CENTER_LEFT" />
+                        <Label fx:id="widthHeightLabelValue" styleClass="file-property-value" />
                      </children>
                   </StackPane>
                </children>
@@ -152,6 +152,12 @@
                         <Insets left="20.0" />
                      </padding>
                   </Label>
+                  <Label fx:id="artistsLabel" styleClass="file-property" text="Interpreten:" GridPane.rowIndex="2" />
+                  <StackPane alignment="CENTER_LEFT" prefHeight="150.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                     <children>
+                        <Label fx:id="artistsLabelValue" />
+                     </children>
+                  </StackPane>
                </children>
             </GridPane>
          </items>

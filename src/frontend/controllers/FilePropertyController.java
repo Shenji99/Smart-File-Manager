@@ -102,6 +102,13 @@ public class FilePropertyController implements Initializable {
 
         FileManager.getInstance().addTagObserver(tags -> this.updatePresetTagList(tags));
 
+        //FOR TESTING
+        try {
+            FileManager.getInstance().loadPresetTags(new File("C:\\Users\\LMaro\\Desktop\\tags.csv"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
         this.widthHeightLabel.setVisible(false);
         this.widthHeightLabelValue.setVisible(false);
         this.artistsLabel.setVisible(false);
@@ -364,6 +371,7 @@ public class FilePropertyController implements Initializable {
 
     private void updateArtistsLabel(DataFile f) {
         if(f.isArtistsLoaded()){
+            ((StackPane)this.artistsLabelValue.getParent()).getChildren().removeIf(e -> e instanceof ImageView);
             this.artistsLabel.setVisible(true);
             this.artistsLabelValue.setVisible(true);
             this.artistsLabelValue.setText(f.getArtistsAsString());

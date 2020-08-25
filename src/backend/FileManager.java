@@ -798,7 +798,7 @@ public class FileManager {
 
 
     public void updateFileArtists(DataFile df, String artists, Callback callback, Callback onError) {
-        if(artists != null && !artists.isEmpty()){
+        if(artists != null){
             df.getArtists().clear();
             String[] artistsArr = artists.split(",");
             for(String s: artistsArr){

@@ -100,9 +100,9 @@
                </rowConstraints>
                <children>
                   <Label maxWidth="Infinity" styleClass="file-property" text="Name:" />
-                  <StackPane alignment="CENTER_LEFT" GridPane.columnIndex="1">
+                  <StackPane alignment="CENTER_LEFT" prefHeight="34.0" prefWidth="138.0" GridPane.columnIndex="1">
                      <children>
-                        <Label fx:id="nameLabelValue" styleClass="file-property-value">
+                        <Label fx:id="nameLabelValue" prefHeight="27.0" prefWidth="710.0" styleClass="file-property-value">
                            <padding>
                               <Insets left="20.0" />
                            </padding>
@@ -153,9 +153,9 @@
                      </padding>
                   </Label>
                   <Label fx:id="artistsLabel" styleClass="file-property" text="Interpreten:" GridPane.rowIndex="2" />
-                  <StackPane alignment="CENTER_LEFT" prefHeight="150.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                  <StackPane alignment="CENTER_LEFT" prefHeight="44.0" prefWidth="92.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
                      <children>
-                        <Label fx:id="artistsLabelValue" />
+                        <Label fx:id="artistsLabelValue" prefHeight="27.0" prefWidth="731.0" />
                      </children>
                   </StackPane>
                </children>

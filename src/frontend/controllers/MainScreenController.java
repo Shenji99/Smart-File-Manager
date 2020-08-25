@@ -199,7 +199,7 @@ public class MainScreenController implements Initializable {
         ImageView spinnerIv = new ImageView();
         spinnerIv.setFitWidth(width);
         spinnerIv.setFitHeight(height);
-        String pth = FileManager.getResourcePath(getClass(), "images", "spinner2.gif");
+        String pth = FileManager.getResourcePath("images", "spinner2.gif");
         Image spinner = new Image("file:/" + pth);
         spinnerIv.setImage(spinner);
         return spinnerIv;

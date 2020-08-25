@@ -55,7 +55,7 @@ public class FileManager {
     }
 
     public static String getArtists(DataFile f) throws IOException, InterruptedException {
-        String cmd = getResourcePath(FileManager.class, "exiftool", "exiftool.exe");
+        String cmd = getResourcePath("exiftool", "exiftool.exe");
                     cmd += " -L -S -m -q -fast2 -artist ";
                     cmd += "\""+f.getPath()+"\"";
         Process p = Runtime.getRuntime().exec(cmd);
@@ -240,7 +240,7 @@ public class FileManager {
             List li = listArr.get(i);
             if(li.size() > 0) {
                 new Thread(() -> {
-                    String cmd = getResourcePath(getClass(), "exiftool", "exiftool.exe");
+                    String cmd = getResourcePath("exiftool", "exiftool.exe");
                     cmd += " -L -S -m -q -fast2 -fileName -directory -category -artist ";
 
                     boolean addedFile = false;
@@ -580,7 +580,7 @@ public class FileManager {
         newName = newName.replace("/", "+");
         newName = newName.replace(":", "+");
 
-        return FileManager.getResourcePath(FileManager.class, "thumbnails", newName+".jpg");
+        return FileManager.getResourcePath("thumbnails", newName+".jpg");
     }
 
     public static Image createThumbnail(DataFile f, String outpath) throws IOException, InterruptedException, UnexpectedErrorException {
@@ -637,8 +637,8 @@ public class FileManager {
         }
     }
 
-    public static String getResourcePath(Class c, String foldername, String name){
-        String path = c.getResource("/"+foldername).getPath() + "/"+name;
+    public static String getResourcePath(String foldername, String name){
+        String path = FileManager.class.getResource("/"+foldername).getPath() + "/"+name;
         path = path
             .replace("/", "\\")
             .substring(1);
@@ -646,7 +646,7 @@ public class FileManager {
     }
 
     public static String getResourcePath(Class c, String foldername) {
-        return getResourcePath(c, foldername, "");
+        return getResourcePath(foldername, "");
     }
 
     public static String getResolution(DataFile df) throws IOException, InterruptedException {
@@ -731,7 +731,7 @@ public class FileManager {
                         }
                     }
 
-                    String cmd = getResourcePath(getClass(), "exiftool", "exiftool.exe");
+                    String cmd = getResourcePath("exiftool", "exiftool.exe");
                     cmd += " -overwrite_original -category=";
 
                     if(!tags.isEmpty()) {
@@ -742,6 +742,7 @@ public class FileManager {
                         //if error occurs run the error callback
                         String error = new String(p1.getErrorStream().readAllBytes());
                         if(error.toLowerCase().startsWith("error")){
+                            df.getTags().clear();
                             onError.run(error.split(" - ")[0]);
                         }else {
                             success.run();
@@ -762,7 +763,7 @@ public class FileManager {
     public void deleteAllTags(DataFile df, Callback callback) {
         executor.submit(() -> {
             df.removeAllTags();
-            String cmd = getResourcePath(getClass(), "exiftool", "exiftool.exe");
+            String cmd = getResourcePath("exiftool", "exiftool.exe");
                 cmd += " -overwrite_original -category= \""+df.getPath()+"\"";
             try {
                 Process p = Runtime.getRuntime().exec(cmd);
@@ -776,7 +777,7 @@ public class FileManager {
 
     public boolean isPlayableVideo(DataFile df) {
         String mimetype = getDataFileMimeType(df);
-        if(mimetype != null){
+        if(!mimetype.isEmpty()){
             return mimetype.equals("video/mp4");
         }
         return false;
@@ -793,5 +794,40 @@ public class FileManager {
     public void removeTagsFromFile(DataFile file, Set tags, Callback success, Callback error){
         file.removeTags(tags);
         saveFileTags(file, success, error);
+    }
+
+
+    public void updateFileArtists(DataFile df, String artists, Callback callback, Callback onError) {
+        if(artists != null && !artists.isEmpty()){
+            df.getArtists().clear();
+            String[] artistsArr = artists.split(",");
+            for(String s: artistsArr){
+                df.addArtist(s.trim());
+            }
+
+            String artistsAsString = df.getArtistsAsString();
+
+            executor.submit(() -> {
+                String cmd = getResourcePath("exiftool", "exiftool.exe");
+                cmd += " -overwrite_original -artist=";
+                cmd += "\"" + artistsAsString + "\" ";
+                cmd += "\"" + df.getPath() + "\"";
+
+                try {
+                    Process p = Runtime.getRuntime().exec(cmd);
+                    p.waitFor();
+
+                    String err = new String(p.getErrorStream().readAllBytes());
+                    if (err.toLowerCase().startsWith("error")) {
+                        df.getArtists().clear();
+                        onError.run(err.split(" - ")[0]);
+                    } else {
+                        callback.run();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
     }
 }

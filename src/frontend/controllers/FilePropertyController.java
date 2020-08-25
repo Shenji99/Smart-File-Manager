@@ -63,6 +63,7 @@ public class FilePropertyController implements Initializable {
     @FXML public Label widthHeightLabelValue;
     @FXML public Label typeLabelValue;
     @FXML public Label changeDateLabel;
+    private StackPane artistStackPane;
     @FXML public Label artistsLabel;
     @FXML public Label artistsLabelValue;
 
@@ -125,7 +126,7 @@ public class FilePropertyController implements Initializable {
 
         this.playIcon.setVisible(false);
 
-        String path = FileManager.getResourcePath(getClass(), "images", "playIcon.png");
+        String path = FileManager.getResourcePath("images", "playIcon.png");
         Image playImg = new Image("file:/" + path);
         this.playIcon.setImage(playImg);
 
@@ -360,6 +361,7 @@ public class FilePropertyController implements Initializable {
         }
     }
 
+
     private void updateArtistsLabel(DataFile f) {
         if(f.isArtistsLoaded()){
             this.artistsLabel.setVisible(true);
@@ -390,6 +392,7 @@ public class FilePropertyController implements Initializable {
                 }
             });
         }
+        this.artistsLabelValue.setOnMouseClicked(mouseEvent -> editFileArtists(mouseEvent, f));
     }
 
     private void updateChangeDateValueLabel(DataFile f) {
@@ -537,10 +540,70 @@ public class FilePropertyController implements Initializable {
         }
     }
 
+    private void editFileArtists(Event event, DataFile f) {
+        if ((event instanceof MouseEvent && ((MouseEvent) event).getClickCount() == 2) || event instanceof ActionEvent) {
+            artistsLabelValue.setVisible(false);
+            TextField textfield = new TextField(artistsLabelValue.getText());
+            textfield.setPrefHeight(artistsLabelValue.getHeight() + 10);
+
+            this.artistStackPane = (StackPane) artistsLabelValue.getParent();
+            artistStackPane.getChildren().add(textfield);
+
+            textfield.setOnKeyPressed(event1 -> {
+                if (event1.getCode() == KeyCode.ENTER) {
+                    String newName = textfield.getText();
+                    hideArtistNameEdit();
+
+                    StackPane wrapper = (StackPane) this.artistsLabelValue.getParent();
+                    this.artistsLabelValue.setVisible(false);
+                    wrapper.getChildren().add(mainScreenController.createLodingSpinner(20, 20));
+
+                    if (!newName.equals(f.getName())) {
+                        FileManager.getInstance().updateFileArtists(f, newName, callback ->{
+                            if(f.getPath().equals(this.pathLabelValue.getText())){
+                                Platform.runLater(() -> {
+                                    this.artistsLabelValue.setVisible(true);
+                                    this.artistsLabelValue.setText(f.getArtistsAsString());
+                                    wrapper.getChildren().removeIf(e -> e instanceof ImageView);
+                                });
+                            }
+                        }, error -> {
+                            if(f.getPath().equals(this.pathLabelValue.getText())){
+                                Platform.runLater(() -> {
+                                    this.artistsLabelValue.setVisible(true);
+                                    wrapper.getChildren().removeIf(e -> e instanceof ImageView);
+                                    mainScreenController.showError((String) error[0]);
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    }
+
+    private void hideArtistNameEdit() {
+        if (artistStackPane != null && artistsLabelValue != null) {
+            Iterator iter = artistStackPane.getChildren().iterator();
+            while (iter.hasNext()) {
+                Node n = (Node) iter.next();
+                if (n instanceof TextField) {
+                    iter.remove();
+                }
+            }
+            artistsLabelValue.setVisible(true);
+        }
+    }
+
     public void filePropertiesPaneClicked(MouseEvent event) {
         if (event.getTarget() != this.nameLabelValue) {
             hideNameEdit();
         }
+
+        if(event.getTarget() != this.artistsLabelValue) {
+            hideArtistNameEdit();
+        }
+
         if (event.getTarget() != this.addTagTextField) {
             this.addTagTextField.getStyleClass().remove("error-border");
         }
@@ -573,7 +636,7 @@ public class FilePropertyController implements Initializable {
     public void updateSingleFileTags(DataFile f, Callback callback) {
         executor.submit(() -> {
             try {
-                String cmd = FileManager.getResourcePath(getClass(), "exiftool", "exiftool.exe");
+                String cmd = FileManager.getResourcePath("exiftool", "exiftool.exe");
                 cmd += " -L -S -m -q -fast2 -fileName -directory -category ";
                 cmd += "\"" + f.getPath() + "\"";
                 Process p = Runtime.getRuntime().exec(cmd);

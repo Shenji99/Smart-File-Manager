@@ -67,6 +67,9 @@ public class FilePropertyController implements Initializable {
     @FXML public Label artistsLabel;
     @FXML public Label artistsLabelValue;
 
+    TextField editFileArtistTextField;
+    TextField editFileNameTextField;
+
     @FXML public FlowPane fileTagsBox;
     @FXML public FlowPane presetTagsContainer;
     @FXML public VBox propertiesWrapper;
@@ -84,6 +87,8 @@ public class FilePropertyController implements Initializable {
     @FXML public Button deletePresetTagsButton;
     @FXML public Button abortTagsAddingButton;
     @FXML public Button saveTagsPresetButton;
+    @FXML public HBox nameEditButtonsWrapper;
+    @FXML public HBox artistsEditButtonsWrapper;
 
     @FXML public Button deleteSelectedPresetTagsButton;
     @FXML public Button abortDeletePresetTagsButton;
@@ -102,13 +107,6 @@ public class FilePropertyController implements Initializable {
 
         FileManager.getInstance().addTagObserver(tags -> this.updatePresetTagList(tags));
 
-        //FOR TESTING
-        try {
-            FileManager.getInstance().loadPresetTags(new File("C:\\Users\\LMaro\\Desktop\\tags.csv"));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
         this.widthHeightLabel.setVisible(false);
         this.widthHeightLabelValue.setVisible(false);
         this.artistsLabel.setVisible(false);
@@ -120,6 +118,9 @@ public class FilePropertyController implements Initializable {
         this.abortDeletePresetTagsButton.setVisible(false);
         this.abortDeletingTagsButton.setVisible(false);
         this.confirmDeleteFileTagsButton.setVisible(false);
+
+        this.nameEditButtonsWrapper.setVisible(false);
+        this.artistsEditButtonsWrapper.setVisible(false);
 
         this.controlsWrapper.setPrefWidth(this.mediaView.getFitWidth());
         this.controlsWrapper.setMaxWidth(this.mediaView.getFitWidth());
@@ -327,6 +328,7 @@ public class FilePropertyController implements Initializable {
                 }
             }
             nameLabelValue.setVisible(true);
+            nameEditButtonsWrapper.setVisible(false);
         }
     }
 
@@ -349,6 +351,8 @@ public class FilePropertyController implements Initializable {
         abortAddingTags();
         abortDeletingPresetTags();
 
+        hideArtistNameEdit();
+
         String mimeType = FileManager.getDataFileMimeType(f);
         this.playIcon.setVisible(mimeType.equals("video/mp4")); //only enable playicon at mp4 vids
 
@@ -367,7 +371,6 @@ public class FilePropertyController implements Initializable {
             this.updateThumbnail(f, true);
         }
     }
-
 
     private void updateArtistsLabel(DataFile f) {
         if(f.isArtistsLoaded()){
@@ -517,74 +520,94 @@ public class FilePropertyController implements Initializable {
     private void editFileName(Event event, DataFile f) {
         if ((event instanceof MouseEvent && ((MouseEvent) event).getClickCount() == 2) || event instanceof ActionEvent) {
             nameLabelValue.setVisible(false);
-            TextField textfield = new TextField(nameLabelValue.getText());
-            textfield.setPrefHeight(nameLabelValue.getHeight() + 10);
+            editFileNameTextField = new TextField(nameLabelValue.getText());
+            editFileNameTextField.setPrefHeight(nameLabelValue.getHeight() + 10);
+            this.nameEditButtonsWrapper.setVisible(true);
 
             this.nameStackPane = (StackPane) nameLabelValue.getParent();
-            nameStackPane.getChildren().add(textfield);
+            nameStackPane.getChildren().add(editFileNameTextField);
 
-            textfield.setOnKeyPressed(event1 -> {
+            editFileNameTextField.setOnKeyPressed(event1 -> {
                 if (event1.getCode() == KeyCode.ENTER) {
-                    String newName = textfield.getText();
-                    if (!newName.equals(f.getName())) {
-                        try {
-                            f.rename(newName);
-                            nameLabelValue.setText(newName);
-                            hideNameEdit();
-                        } catch (InvalidFileNameException e) {
-                            //Show error
-                            textfield.getStyleClass().add("error-border");
-                            Tooltip tooltip = new Tooltip();
-                            tooltip.setText(e.getMessage());
-                            textfield.setTooltip(tooltip);
-                        } catch (UnexpectedErrorException e) {
-                            this.mainScreenController.showError(e.getMessage());
-                        }
-                    } else {
-                        hideNameEdit();
-                    }
+                    prepareFileForUpdate();
+                    submitFileNameChange(f);
                 }
             });
+        }
+    }
+
+    private void submitFileNameChange(DataFile f) {
+        String newName = editFileNameTextField.getText();
+        if (!newName.equals(f.getName())) {
+            try {
+                f.rename(newName);
+                nameLabelValue.setText(newName);
+                hideNameEdit();
+            } catch (InvalidFileNameException e) {
+                //Show error
+                editFileNameTextField.getStyleClass().add("error-border");
+                Tooltip tooltip = new Tooltip();
+                tooltip.setText(e.getMessage());
+                editFileNameTextField.setTooltip(tooltip);
+            } catch (UnexpectedErrorException e) {
+                this.mainScreenController.showError(e.getMessage());
+            }
+        } else {
+            hideNameEdit();
         }
     }
 
     private void editFileArtists(Event event, DataFile f) {
         if ((event instanceof MouseEvent && ((MouseEvent) event).getClickCount() == 2) || event instanceof ActionEvent) {
             artistsLabelValue.setVisible(false);
-            TextField textfield = new TextField(artistsLabelValue.getText());
-            textfield.setPrefHeight(artistsLabelValue.getHeight() + 10);
+            editFileArtistTextField = new TextField(artistsLabelValue.getText());
+            editFileArtistTextField.setPrefHeight(artistsLabelValue.getHeight() + 10);
+            this.artistsEditButtonsWrapper.setVisible(true);
 
             this.artistStackPane = (StackPane) artistsLabelValue.getParent();
-            artistStackPane.getChildren().add(textfield);
+            artistStackPane.getChildren().add(editFileArtistTextField);
 
-            textfield.setOnKeyPressed(event1 -> {
+            editFileArtistTextField.setOnKeyPressed(event1 -> {
                 if (event1.getCode() == KeyCode.ENTER) {
-                    String newName = textfield.getText();
-                    hideArtistNameEdit();
+                    submitFileArtistsChange(f);
+                }
+            });
+        }
+    }
 
-                    StackPane wrapper = (StackPane) this.artistsLabelValue.getParent();
-                    this.artistsLabelValue.setVisible(false);
-                    wrapper.getChildren().add(mainScreenController.createLodingSpinner(20, 20));
+    private void submitFileArtistsChange(DataFile f) {
+        String newName = editFileArtistTextField.getText();
+        hideArtistNameEdit();
 
-                    if (!newName.equals(f.getName())) {
-                        FileManager.getInstance().updateFileArtists(f, newName, callback ->{
-                            if(f.getPath().equals(this.pathLabelValue.getText())){
-                                Platform.runLater(() -> {
-                                    this.artistsLabelValue.setVisible(true);
-                                    this.artistsLabelValue.setText(f.getArtistsAsString());
-                                    wrapper.getChildren().removeIf(e -> e instanceof ImageView);
-                                });
-                            }
-                        }, error -> {
-                            if(f.getPath().equals(this.pathLabelValue.getText())){
-                                Platform.runLater(() -> {
-                                    this.artistsLabelValue.setVisible(true);
-                                    wrapper.getChildren().removeIf(e -> e instanceof ImageView);
-                                    mainScreenController.showError((String) error[0]);
-                                });
-                            }
-                        });
-                    }
+        StackPane wrapper = (StackPane) this.artistsLabelValue.getParent();
+        this.artistsLabelValue.setVisible(false);
+        wrapper.getChildren().add(mainScreenController.createLodingSpinner(20, 20));
+
+        boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(f);
+
+        if (!newName.equals(f.getName())) {
+            prepareFileForUpdate();
+            FileManager.getInstance().updateFileArtists(f, newName, callback -> {
+                if(f.getPath().equals(this.pathLabelValue.getText())){
+                    Platform.runLater(() -> {
+                        this.artistsLabelValue.setVisible(true);
+                        this.artistsLabelValue.setText(f.getArtistsAsString());
+                        wrapper.getChildren().removeIf(e -> e instanceof ImageView);
+                        if(isPlayableVideo){
+                            playIcon.setVisible(true);
+                        }
+                    });
+                }
+            }, error -> {
+                if(f.getPath().equals(this.pathLabelValue.getText())){
+                    Platform.runLater(() -> {
+                        this.artistsLabelValue.setVisible(true);
+                        wrapper.getChildren().removeIf(e -> e instanceof ImageView);
+                        mainScreenController.showError((String) error[0]);
+                        if(isPlayableVideo){
+                            playIcon.setVisible(true);
+                        }
+                    });
                 }
             });
         }
@@ -600,6 +623,7 @@ public class FilePropertyController implements Initializable {
                 }
             }
             artistsLabelValue.setVisible(true);
+            artistsEditButtonsWrapper.setVisible(false);
         }
     }
 
@@ -618,18 +642,14 @@ public class FilePropertyController implements Initializable {
     }
 
     private void updateTags(DataFile f) {
-        //solve differently that the user can still add tags from preset
+        //maybe solve differently that the user can still add tags from preset
         this.abortAddingTags();
 
         if (f.isTagsLoaded()) {
-//            synchronized (this){
-                setTagsOfFile(f);
-//            }
+            setTagsOfFile(f);
         } else {
             showTagsLoadingSpinner();
             updateSingleFileTags(f, args -> {
-                //makes sure that the tags are not added to a wrong file property
-                //when the user clicks fast on two files in the list
                 String path = (String) args[0];
                 if (path.equals(this.pathLabelValue.getText())) {
                     Platform.runLater(() -> {
@@ -773,6 +793,10 @@ public class FilePropertyController implements Initializable {
                 }
             });
 
+            mediaView.setOnError(mediaErrorEvent -> {
+                this.mainScreenController.showError(mediaErrorEvent.toString());
+            });
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -847,7 +871,6 @@ public class FilePropertyController implements Initializable {
     public void removeErrorBorder(Node n) {
         n.getStyleClass().remove("error-border");
     }
-
 
     public void addTagsToFile(ActionEvent actionEvent) {
         selectedTags = new HashSet<String>();
@@ -981,12 +1004,12 @@ public class FilePropertyController implements Initializable {
         }
     }
 
-
     public void addSingleTagToFile(ActionEvent actionEvent) {
         String tagName = this.addSingleTagToFileTextField.getText();
         if (!tagName.isEmpty()) {
 
             prepareFileForUpdate();
+            this.showTagsLoadingSpinner();
 
             boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(FileManager.getInstance().findFileByPath(this.pathLabelValue.getText()));
             DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
@@ -1033,6 +1056,7 @@ public class FilePropertyController implements Initializable {
         DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
         try {
             prepareFileForUpdate();
+            this.showTagsLoadingSpinner();
             boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(df);
 
             FileManager.getInstance().addTagsToFile(df, this.selectedTags, callback -> {
@@ -1071,7 +1095,6 @@ public class FilePropertyController implements Initializable {
         }
     }
 
-
     public void deleteAllTagsPressed(ActionEvent actionEvent) {
         DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
         boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(df);
@@ -1079,6 +1102,7 @@ public class FilePropertyController implements Initializable {
         if(df.getTags().size() > 0){
             mainScreenController.showConfirmationDialog("Möchtest du wirklich alle Tags der Datei löschen?", "", onConfirm -> {
                 prepareFileForUpdate();
+                this.showTagsLoadingSpinner();
                 FileManager.getInstance().deleteAllTags(df, callback2 -> Platform.runLater(() -> {
                     if(df.getPath().equals(this.pathLabelValue.getText())){
                         updateTags();
@@ -1144,9 +1168,6 @@ public class FilePropertyController implements Initializable {
         if(keyEvent.getCode() == KeyCode.ENTER){
             addSingleTagToFile(null);
         }
-    }
-
-    public void deleteSelectedPresetTags(ActionEvent actionEvent) {
     }
 
     public void abortDeletePresetTagsButtonClicked(ActionEvent actionEvent) {
@@ -1250,8 +1271,6 @@ public class FilePropertyController implements Initializable {
         this.addSingleTagButton.setDisable(true);
         this.addSingleTagToFileTextField.clear();
 
-        this.showTagsLoadingSpinner();
-
         if (this.mediaPlayer != null) {
             this.mediaPlayer.dispose();
         }
@@ -1267,6 +1286,7 @@ public class FilePropertyController implements Initializable {
                 this.saveTagsPresetButton.setDisable(true);
                 this.abortDeletingTagsButton.setDisable(true);
                 prepareFileForUpdate();
+                this.showTagsLoadingSpinner();
                 boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(FileManager.getInstance().findFileByPath(this.pathLabelValue.getText()));
                 DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
 
@@ -1321,5 +1341,21 @@ public class FilePropertyController implements Initializable {
                 n.getStyleClass().add("primary-purple-background");
             }
         });
+    }
+
+    public void submitFileArtistsChange(ActionEvent actionEvent) {
+        submitFileArtistsChange(FileManager.getInstance().findFileByPath(this.pathLabelValue.getText()));
+    }
+
+    public void abortFileArtistsChange(ActionEvent actionEvent) {
+        hideArtistNameEdit();
+    }
+
+    public void submitFileNameChange(ActionEvent actionEvent) {
+        submitFileNameChange(FileManager.getInstance().findFileByPath(this.pathLabelValue.getText()));
+    }
+
+    public void abortFileNameChange(ActionEvent actionEvent) {
+        hideNameEdit();
     }
 }

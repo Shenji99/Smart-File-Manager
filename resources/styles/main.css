@@ -240,3 +240,23 @@
 
 
 
+
+.red-text {
+	-fx-text-fill: red;
+}
+
+.green-text {
+	-fx-text-fill: mediumspringgreen;
+}
+
+.round-button {
+	-fx-bottom: -fx-dark-grey;
+	-fx-background-radius: 5em;
+	-fx-background-insets: 0px;
+	-fx-padding: 0px;
+}
+
+.round-button:hover {
+	-fx-background-color: -fx-medium-grey;
+}
+

@@ -31,7 +31,6 @@ import javafx.scene.media.MediaView;
 import javafx.util.Duration;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
@@ -62,7 +61,7 @@ public class FilePropertyController implements Initializable {
     @FXML public Label widthHeightLabel;
     @FXML public Label widthHeightLabelValue;
     @FXML public Label typeLabelValue;
-    @FXML public Label changeDateLabel;
+    @FXML public Label changeDateLabelValue;
     private StackPane artistStackPane;
     @FXML public Label artistsLabel;
     @FXML public Label artistsLabelValue;
@@ -106,6 +105,19 @@ public class FilePropertyController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
         FileManager.getInstance().addTagObserver(tags -> this.updatePresetTagList(tags));
+        FileManager.getInstance().addFileObserver(dataFile -> {
+            DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
+            if(df == null || df.getId().equals(dataFile.getId())) {
+                this.nameLabelValue.setText(dataFile.getName());
+                this.typeLabelValue.setText(dataFile.getType());
+                this.pathLabelValue.setText(dataFile.getPath());
+                this.pathLabelValue.getTooltip().setText(dataFile.getPath());
+                this.sizeLabelValue.setText(dataFile.getFormattedSize());
+                this.changeDateLabelValue.setText(dataFile.formatDate());
+                this.artistsLabelValue.setText(dataFile.getArtistsAsString());
+                this.widthHeightLabelValue.setText(dataFile.getWidth()+"x"+dataFile.getHeight());
+            }
+        });
 
         this.widthHeightLabel.setVisible(false);
         this.widthHeightLabelValue.setVisible(false);
@@ -253,14 +265,16 @@ public class FilePropertyController implements Initializable {
                     try {
                         Image img = FileManager.createThumbnail(f, outpath);
                         if (set) {
-                            Platform.runLater(() -> {
-                                hideThumbnailLoadingSpinner();
-                                this.thumbnail.setImage(img);
-                                String mimetype = FileManager.getDataFileMimeType(f);
-                                if (mimetype != null && mimetype.equals("video/mp4")) {
-                                    this.playIcon.setVisible(true);
-                                }
-                            });
+                            if(f.getPath().equals(this.pathLabelValue.getText())){
+                                Platform.runLater(() -> {
+                                    hideThumbnailLoadingSpinner();
+                                    this.thumbnail.setImage(img);
+                                    String mimetype = FileManager.getDataFileMimeType(f);
+                                    if (mimetype != null && mimetype.equals("video/mp4")) {
+                                        this.playIcon.setVisible(true);
+                                    }
+                                });
+                            }
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -373,9 +387,10 @@ public class FilePropertyController implements Initializable {
     }
 
     private void updateArtistsLabel(DataFile f) {
+        this.artistsLabel.setVisible(true);
+
         if(f.isArtistsLoaded()){
             ((StackPane)this.artistsLabelValue.getParent()).getChildren().removeIf(e -> e instanceof ImageView);
-            this.artistsLabel.setVisible(true);
             this.artistsLabelValue.setVisible(true);
             this.artistsLabelValue.setText(f.getArtistsAsString());
         }else {
@@ -403,11 +418,25 @@ public class FilePropertyController implements Initializable {
                 }
             });
         }
+
+        ContextMenu cm = new ContextMenu();
+        MenuItem copy = new MenuItem("copy");
+        copy.setOnAction(actionEvent -> {
+            ClipboardContent content = new ClipboardContent();
+            content.putString(f.getArtistsAsString());
+            Clipboard.getSystemClipboard().setContent(content);
+        });
+
+        MenuItem edit = new MenuItem("Edit");
+        edit.setOnAction(actionEvent -> editFileArtists(actionEvent, f));
+
+        cm.getItems().addAll(copy, edit);
+        artistsLabelValue.setOnContextMenuRequested(contextMenuEvent -> cm.show(artistsLabelValue, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY()));
         this.artistsLabelValue.setOnMouseClicked(mouseEvent -> editFileArtists(mouseEvent, f));
     }
 
     private void updateChangeDateValueLabel(DataFile f) {
-        changeDateLabel.setText(f.formatDate());
+        changeDateLabelValue.setText(f.formatDate());
         ContextMenu cm = new ContextMenu();
         MenuItem copy = new MenuItem("copy");
         copy.setOnAction(actionEvent -> {
@@ -416,7 +445,7 @@ public class FilePropertyController implements Initializable {
             Clipboard.getSystemClipboard().setContent(content);
         });
         cm.getItems().add(copy);
-        changeDateLabel.setOnContextMenuRequested(contextMenuEvent -> cm.show(changeDateLabel, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY()));
+        changeDateLabelValue.setOnContextMenuRequested(contextMenuEvent -> cm.show(changeDateLabelValue, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY()));
     }
 
     private void updateTypeValueLabel(DataFile f) {
@@ -540,17 +569,15 @@ public class FilePropertyController implements Initializable {
         String newName = editFileNameTextField.getText();
         if (!newName.equals(f.getName())) {
             try {
-                f.rename(newName);
-                nameLabelValue.setText(newName);
+                FileManager.getInstance().renameFile(f, newName);
                 hideNameEdit();
             } catch (InvalidFileNameException e) {
                 //Show error
+                this.mainScreenController.showError(e.getMessage());
                 editFileNameTextField.getStyleClass().add("error-border");
                 Tooltip tooltip = new Tooltip();
                 tooltip.setText(e.getMessage());
                 editFileNameTextField.setTooltip(tooltip);
-            } catch (UnexpectedErrorException e) {
-                this.mainScreenController.showError(e.getMessage());
             }
         } else {
             hideNameEdit();

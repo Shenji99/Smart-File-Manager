@@ -19,6 +19,7 @@ import java.util.*;
 
 public class DataFile {
 
+    private final String id;
     private DataFile parent;
 
     private String name;
@@ -38,6 +39,7 @@ public class DataFile {
     private int width, height;
 
     public DataFile() {
+        this.id = UUID.randomUUID().toString();
         this.files = new ArrayList<>();
         this.tags = new ArrayList<>();
         this.artists = new ArrayList<>();
@@ -134,7 +136,7 @@ public class DataFile {
         return dataFiles;
     }
 
-    public void rename(String newName) throws InvalidFileNameException, UnexpectedErrorException {
+    public void rename(String newName) throws InvalidFileNameException {
         if(newName.length() > Constants.MAX_FILENAME_LENGTH){
             throw new InvalidFileNameException("Dateiname ist zu lang");
         }
@@ -157,6 +159,7 @@ public class DataFile {
             boolean renameSuccessful = oldFile.renameTo(newFile);
             if(renameSuccessful) {
                 this.name = newName;
+                this.path = newFile.getAbsolutePath();
             }else{
                 throw new UnexpectedErrorException("Fehler beim Umbenennen der Datei");
             }
@@ -341,6 +344,10 @@ public class DataFile {
 
     public void setArtistsLoaded(boolean b) {
         this.artistsLoaded = b;
+    }
+
+    public String getId() {
+        return id;
     }
 }
 

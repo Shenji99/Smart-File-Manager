@@ -1,7 +1,5 @@
 package backend.tasks;
 
-import backend.TaskRunnable;
-
 public class Task {
 
     private TaskRunnable runnable;

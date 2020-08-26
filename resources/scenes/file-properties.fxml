@@ -168,7 +168,7 @@
                      </padding>
                   </Label>
                   <Label maxWidth="Infinity" styleClass="file-property" text="Änderungsdatum:" GridPane.rowIndex="1" />
-                  <Label fx:id="changeDateLabel" maxWidth="Infinity" styleClass="file-property-value" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                  <Label fx:id="changeDateLabelValue" maxWidth="Infinity" styleClass="file-property-value" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="1">
                      <padding>
                         <Insets left="20.0" />
                      </padding>

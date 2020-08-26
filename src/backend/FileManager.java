@@ -1,8 +1,11 @@
 package backend;
 
 import backend.data.DataFile;
+import backend.exceptions.InvalidFileNameException;
 import backend.exceptions.InvalidNameException;
 import backend.exceptions.UnexpectedErrorException;
+import backend.observers.FileObserver;
+import backend.observers.TagObserver;
 import backend.tasks.Callback;
 import javafx.scene.image.Image;
 
@@ -32,6 +35,7 @@ public class FileManager {
     private SearchOption searchOption;
 
     private SortedSet<String> presetTags;
+    private ArrayList<FileObserver> fileObservers;
     private ArrayList<TagObserver> tagObservers;
 
     private ThreadPoolExecutor executor;
@@ -39,6 +43,7 @@ public class FileManager {
     public FileManager() {
         this.executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
         this.files = new ArrayList<>();
+        this.fileObservers = new ArrayList<>();
         this.tagObservers = new ArrayList<>();
         this.presetTags = new TreeSet<>(Comparator.comparing(String::toLowerCase));
         this.loadThumbnails = true;
@@ -680,14 +685,6 @@ public class FileManager {
         }
     }
 
-    public void addTagObserver(TagObserver o){
-        this.tagObservers.add(o);
-    }
-
-    public void removeTagObserver(TagObserver o){
-        this.tagObservers.remove(o);
-    }
-
     public boolean addTagToPreset(String tagText) {
         if(!presetTags.contains(tagText)){
             presetTags.add(tagText);
@@ -828,6 +825,37 @@ public class FileManager {
                     e.printStackTrace();
                 }
             });
+        }
+    }
+
+    public void addFileObserver(FileObserver observer){
+        this.fileObservers.add(observer);
+    }
+
+    public void removeFileObserver(FileObserver observer){
+        this.fileObservers.remove(observer);
+    }
+
+    public void removeAllFileObservers() {
+        this.fileObservers.clear();
+    }
+
+    public void addTagObserver(TagObserver o){
+        this.tagObservers.add(o);
+    }
+
+    public void removeTagObserver(TagObserver o){
+        this.tagObservers.remove(o);
+    }
+
+    public void renameFile(DataFile f, String newName) throws InvalidFileNameException {
+        f.rename(newName);
+        notifyFileObservers(f);
+    }
+
+    private void notifyFileObservers(DataFile f) {
+        for(FileObserver fo: fileObservers){
+            fo.notify(f);
         }
     }
 }

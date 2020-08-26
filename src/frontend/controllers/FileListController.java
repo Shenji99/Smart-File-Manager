@@ -1,6 +1,7 @@
 package frontend.controllers;
 
 import backend.FileManager;
+import backend.observers.FileObserver;
 import backend.SearchOption;
 import backend.data.DataFile;
 import javafx.application.Platform;
@@ -170,6 +171,17 @@ public class FileListController implements Initializable {
         wrapper.setOnContextMenuRequested(contextMenuEvent -> cm.show(wrapper, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY()));
 
         wrapper.getChildren().addAll(nameWrapper, typeWrapper, sizeWrapper, dateWrapper, pathWrapper);
+        
+        FileManager.getInstance().addFileObserver(dataFile -> {
+            if(dataFile. getId().equals(df.getId())) {
+                name.setText(dataFile.getName());
+                type.setText(dataFile.getType());
+                size.setText(dataFile.getFormattedSize());
+                date.setText(dataFile.formatDate());
+                lpath.setText(df.getPath());
+            }
+        });
+        
         return wrapper;
     }
 
@@ -266,6 +278,7 @@ public class FileListController implements Initializable {
 
     public void clearListClicked(ActionEvent actionEvent) {
         FileManager fileManager = FileManager.getInstance();
+        fileManager.removeAllFileObservers();
         fileManager.deleteAllFiles();
         fileManager.stopAllBackgroundThreads();
         mainScreenController.getFilePropertyController().clearPanel();

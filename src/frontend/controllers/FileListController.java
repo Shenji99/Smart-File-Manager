@@ -129,6 +129,7 @@ public class FileListController implements Initializable {
     }
 
     public HBox createListItem(DataFile df) {
+
         HBox nameWrapper = new HBox();
         nameWrapper.setMaxWidth(200);
         nameWrapper.setPrefWidth(200);

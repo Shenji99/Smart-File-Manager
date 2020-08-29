@@ -31,6 +31,7 @@ import javafx.scene.media.MediaView;
 import javafx.util.Duration;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
@@ -118,6 +119,13 @@ public class FilePropertyController implements Initializable {
                 this.widthHeightLabelValue.setText(dataFile.getWidth()+"x"+dataFile.getHeight());
             }
         });
+
+
+        try {
+            FileManager.getInstance().loadPresetTags(new File("\\C:\\Users\\LMaro\\Desktop\\tags.csv"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
         this.widthHeightLabel.setVisible(false);
         this.widthHeightLabelValue.setVisible(false);
@@ -573,7 +581,7 @@ public class FilePropertyController implements Initializable {
                 hideNameEdit();
             } catch (InvalidFileNameException e) {
                 //Show error
-                this.mainScreenController.showError(e.getMessage());
+                MainScreenController.showError(e.getMessage());
                 editFileNameTextField.getStyleClass().add("error-border");
                 Tooltip tooltip = new Tooltip();
                 tooltip.setText(e.getMessage());
@@ -603,16 +611,15 @@ public class FilePropertyController implements Initializable {
     }
 
     private void submitFileArtistsChange(DataFile f) {
-        String newName = editFileArtistTextField.getText();
+        String newName = editFileArtistTextField.getText().trim();
         hideArtistNameEdit();
 
-        StackPane wrapper = (StackPane) this.artistsLabelValue.getParent();
-        this.artistsLabelValue.setVisible(false);
-        wrapper.getChildren().add(mainScreenController.createLodingSpinner(20, 20));
-
-        boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(f);
-
         if (!newName.equals(f.getName())) {
+            StackPane wrapper = (StackPane) this.artistsLabelValue.getParent();
+            this.artistsLabelValue.setVisible(false);
+            wrapper.getChildren().add(mainScreenController.createLodingSpinner(20, 20));
+
+            boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(f);
             prepareFileForUpdate();
             FileManager.getInstance().updateFileArtists(f, newName, callback -> {
                 if(f.getPath().equals(this.pathLabelValue.getText())){
@@ -630,7 +637,7 @@ public class FilePropertyController implements Initializable {
                     Platform.runLater(() -> {
                         this.artistsLabelValue.setVisible(true);
                         wrapper.getChildren().removeIf(e -> e instanceof ImageView);
-                        mainScreenController.showError((String) error[0]);
+                        MainScreenController.showError((String) error[0]);
                         if(isPlayableVideo){
                             playIcon.setVisible(true);
                         }
@@ -700,7 +707,7 @@ public class FilePropertyController implements Initializable {
                 FileManager.getInstance().updateFiles(res);
                 callback.run(f.getPath());
             } catch (UnexpectedErrorException e) {
-                this.mainScreenController.showError(e.getMessage());
+                MainScreenController.showError(e.getMessage());
             } catch (InterruptedException | IOException | InvalidNameException e) {
                 e.printStackTrace();
             }
@@ -821,7 +828,7 @@ public class FilePropertyController implements Initializable {
             });
 
             mediaView.setOnError(mediaErrorEvent -> {
-                this.mainScreenController.showError(mediaErrorEvent.toString());
+                MainScreenController.showError(mediaErrorEvent.toString());
             });
 
         } catch (Exception e) {
@@ -882,7 +889,7 @@ public class FilePropertyController implements Initializable {
                     this.addTagTextField.getStyleClass().remove("error-border");
                     this.addTagTextField.clear();
                 } else {
-                    this.mainScreenController.showError("Tag existiert bereits");
+                    MainScreenController.showError("Tag existiert bereits");
                     this.addTagTextField.getStyleClass().add("error-border");
                 }
             }
@@ -994,6 +1001,7 @@ public class FilePropertyController implements Initializable {
         this.addTagPresetButton.setDisable(true);
         this.deleteSelectedPresetTagsButton.setDisable(true);
         this.deleteFileTagsButton.setDisable(true);
+        this.addSingleTagButton.setDisable(true);
 
         this.abortDeletePresetTagsButton.setVisible(true);
         this.deletePresetTagsButton.setVisible(false);
@@ -1035,6 +1043,8 @@ public class FilePropertyController implements Initializable {
         String tagName = this.addSingleTagToFileTextField.getText();
         if (!tagName.isEmpty()) {
 
+
+            this.addSingleTagButton.setDisable(true);
             prepareFileForUpdate();
             this.showTagsLoadingSpinner();
 
@@ -1053,7 +1063,7 @@ public class FilePropertyController implements Initializable {
                     });
                 }, error -> {
                     String msg = (String) error[0];
-                    this.mainScreenController.showError(msg);
+                    MainScreenController.showError(msg);
                     df.setTagsLoaded(false);
                     Platform.runLater(() -> {
                         addSingleTagButton.setDisable(false);
@@ -1066,7 +1076,7 @@ public class FilePropertyController implements Initializable {
                     });
                 });
             } catch (InvalidNameException e) {
-                this.mainScreenController.showError(e.getMessage());
+                MainScreenController.showError(e.getMessage());
                 addSingleTagButton.setDisable(false);
                 if (FileManager.getInstance().isPlayableVideo(df) && pathLabelValue.getText().equals(df.getPath())) {
                     updateTags();
@@ -1082,6 +1092,7 @@ public class FilePropertyController implements Initializable {
         }
         DataFile df = FileManager.getInstance().findFileByPath(this.pathLabelValue.getText());
         try {
+            this.addSingleTagButton.setDisable(true);
             prepareFileForUpdate();
             this.showTagsLoadingSpinner();
             boolean isPlayableVideo = FileManager.getInstance().isPlayableVideo(df);
@@ -1099,7 +1110,7 @@ public class FilePropertyController implements Initializable {
                 });
             }, error -> {
                 String msg = (String) error[0];
-                this.mainScreenController.showError(msg);
+                MainScreenController.showError(msg);
                 df.setTagsLoaded(false);
                 Platform.runLater(() -> {
                     if (pathLabelValue.getText().equals(df.getPath())) {
@@ -1113,7 +1124,7 @@ public class FilePropertyController implements Initializable {
                 });
             });
         } catch (InvalidNameException e) {
-            this.mainScreenController.showError(e.getMessage());
+            MainScreenController.showError(e.getMessage());
             updateTags();
             abortAddingTags();
             if (FileManager.getInstance().isPlayableVideo(df) && pathLabelValue.getText().equals(df.getPath())) {
@@ -1208,6 +1219,7 @@ public class FilePropertyController implements Initializable {
             }
             this.addTagsButton.setDisable(false);
             this.addTagPresetButton.setDisable(false);
+            this.addSingleTagButton.setDisable(false);
             this.deleteSelectedPresetTagsButton.setDisable(false);
             this.deleteFileTagsButton.setDisable(false);
             this.confirmDeleteFilePresetTagsButton.setVisible(false);
@@ -1295,7 +1307,6 @@ public class FilePropertyController implements Initializable {
 
     private void prepareFileForUpdate() {
         this.hideMediaPlayerVideo();
-        this.addSingleTagButton.setDisable(true);
         this.addSingleTagToFileTextField.clear();
 
         if (this.mediaPlayer != null) {
@@ -1330,7 +1341,7 @@ public class FilePropertyController implements Initializable {
                     });
                 }, onError -> {
                     String msg = (String) onError[0];
-                    this.mainScreenController.showError(msg);
+                    MainScreenController.showError(msg);
                     df.setTagsLoaded(false);
                     Platform.runLater(() -> {
                         if (pathLabelValue.getText().equals(df.getPath())) {

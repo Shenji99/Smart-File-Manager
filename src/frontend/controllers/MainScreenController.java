@@ -196,13 +196,16 @@ public class MainScreenController implements Initializable {
         }
     }
 
+    Image spinnerImage = null;
     public ImageView createLodingSpinner(int width, int height) {
         ImageView spinnerIv = new ImageView();
         spinnerIv.setFitWidth(width);
         spinnerIv.setFitHeight(height);
-        String pth = FileManager.getResourcePath("images", "spinner2.gif");
-        Image spinner = new Image("file:/" + pth);
-        spinnerIv.setImage(spinner);
+        if(spinnerImage == null){
+            String pth = FileManager.getResourcePath("images", "spinner2.gif");
+            spinnerImage = new Image("file:/" + pth);
+        }
+        spinnerIv.setImage(spinnerImage);
         return spinnerIv;
     }
 
@@ -227,7 +230,7 @@ public class MainScreenController implements Initializable {
         this.filePropertyController = filePropertyController;
     }
 
-    public void showError(String message) {
+    public static void showError(String message) {
         try {
             Platform.runLater(() -> {
                 Alert alert = new Alert(Alert.AlertType.ERROR);

@@ -7,6 +7,7 @@ import backend.exceptions.UnexpectedErrorException;
 import backend.observers.FileObserver;
 import backend.observers.TagObserver;
 import backend.tasks.Callback;
+import frontend.controllers.MainScreenController;
 import javafx.scene.image.Image;
 
 import java.awt.*;
@@ -166,7 +167,7 @@ public class FileManager {
                             String path = createThumbnailPath((DataFile) o);
                             createThumbnail((DataFile) o, path);
                         }catch (Exception e) {
-                            e.printStackTrace();
+                            MainScreenController.showError(e.getMessage());
                         }
                     }else {
                         break;
@@ -566,7 +567,7 @@ public class FileManager {
             output = Integer.parseInt(s.split("\\.")[0]);
             output = output / 2;
         }catch (Exception e){
-            throw new UnexpectedErrorException("Fehler aufgetreten beim erstellen des Thumbnails");
+            throw new UnexpectedErrorException("Fehler aufgetreten beim erstellen des Thumbnails (Datei konnte nicht geöffnet werden)");
         }
         if(!new File(outpath).exists()){
             String screenshotCmd = "ffmpeg -ss " + output + " -i \"" + f.getPath() + "\" -n -frames:v 1 -vf scale=320:-1 \"" + outpath+"\"";

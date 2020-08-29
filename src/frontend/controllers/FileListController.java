@@ -1,7 +1,6 @@
 package frontend.controllers;
 
 import backend.FileManager;
-import backend.observers.FileObserver;
 import backend.SearchOption;
 import backend.data.DataFile;
 import javafx.application.Platform;
